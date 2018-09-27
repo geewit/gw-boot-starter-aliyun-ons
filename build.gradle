@@ -1,0 +1,137 @@
+import java.nio.charset.StandardCharsets
+
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'signing'
+
+buildDir = 'target'
+
+repositories {
+    mavenLocal()
+    maven { url "http://repo1.maven.org/maven2" }
+}
+
+compileJava {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+compileTestJava {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+//设置编码
+compileJava.options*.compilerArgs << "-Xlint:unchecked" << "-Xlint:options"
+
+[compileJava, javadoc]*.options*.encoding = StandardCharsets.UTF_8.name()
+
+def isReleaseBuild() {
+    return !version.contains("SNAPSHOT")
+}
+
+def getReleaseRepositoryUrl() {
+    return hasProperty('RELEASE_REPOSITORY_URL') ? getProperty('RELEASE_REPOSITORY_URL')
+            : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+}
+
+def getSnapshotRepositoryUrl() {
+    return hasProperty('SNAPSHOT_REPOSITORY_URL') ? getProperty('SNAPSHOT_REPOSITORY_URL')
+            : "https://oss.sonatype.org/content/repositories/snapshots/"
+}
+
+def getRepositoryUsername() {
+    return hasProperty('SONATYPE_USERNAME') ? getProperty('SONATYPE_USERNAME') : ""
+}
+
+def getRepositoryPassword() {
+    return hasProperty('SONATYPE_PASSWORD') ? getProperty('SONATYPE_PASSWORD') : ""
+}
+
+
+task javadocs(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+task sources(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives jar
+
+    archives javadocs
+    archives sources
+}
+
+signing {
+    required { isReleaseBuild() }
+    sign configurations.archives
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: getReleaseRepositoryUrl()) {
+                authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
+            }
+
+            snapshotRepository(url: getSnapshotRepositoryUrl()) {
+                authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
+            }
+
+            pom.project {
+                name POM_ARTIFACT_ID
+                packaging POM_PACKAGING
+                description POM_DESCRIPTION
+                url POM_SCM_URL
+
+                licenses {
+                    license {
+                        name = POM_LICENCE_NAME
+                        url = POM_LICENCE_URL
+                    }
+                }
+
+                scm {
+                    url POM_SCM_URL
+                    connection POM_SCM_CONNECTION
+                    developerConnection POM_SCM_DEV_CONNECTION
+                }
+
+                developers {
+                    developer {
+                        id = POM_DEVELOPER_ID
+                        name = POM_DEVELOPER_NAME
+                        email = POM_DEVELOPER_EMAIL
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+dependencies {
+    compile("org.slf4j:slf4j-api:$slf4j_version") {
+        exclude group: 'org.slf4j', module: 'logback'
+    }
+    compile("io.netty:netty-all:$netty_version")
+    compile("commons-codec:commons-codec:$commons_codec_version")
+    compile("org.apache.commons:commons-collections4:$commons_collections4_version")
+    compile("org.apache.commons:commons-lang3:$commons_lang3_version")
+
+    compile("com.alibaba:fastjson:$fastjson_version")
+    //compile("io.geewit.core:gw-core-utils:$gw_core_utils_version")
+    compile("io.geewit.boot:gw-boot-starter-aliyun:$gw_boot_starter_aliyun_version")
+//    compile("com.aliyun.openservices:ons-client:$aliyun_java_sdk_ons_version")
+    compile("org.springframework.boot:spring-boot-actuator:$spring_boot_version")
+    compile("org.springframework.boot:spring-boot-autoconfigure:$spring_boot_version")
+    compile("org.springframework.boot:spring-boot-configuration-processor:$spring_boot_version")
+    compile("org.springframework.boot:spring-boot-starter-web:$spring_boot_version")
+}
+

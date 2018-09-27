@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">  
+  <parent> 
+    <artifactId>rocketmq-all</artifactId>  
+    <groupId>com.alibaba.rocketmq</groupId>  
+    <version>4.1.4</version> 
+  </parent>  
+  <modelVersion>4.0.0</modelVersion>  
+  <artifactId>rocketmq-remoting</artifactId>  
+  <properties> 
+    <maven.compiler.source>1.6</maven.compiler.source>  
+    <maven.compiler.target>1.6</maven.compiler.target> 
+  </properties>  
+  <dependencies> 
+    <dependency> 
+      <groupId>org.apache.rocketmq</groupId>  
+      <artifactId>rocketmq-remoting</artifactId>  
+      <exclusions> 
+        <exclusion> 
+          <groupId>org.apache.rocketmq</groupId>  
+          <artifactId>*</artifactId> 
+        </exclusion> 
+      </exclusions> 
+    </dependency> 
+  </dependencies>  
+  <build> 
+    <extensions> 
+      <extension> 
+        <groupId>kr.motd.maven</groupId>  
+        <artifactId>os-maven-plugin</artifactId>  
+        <version>1.4.0.Final</version> 
+      </extension> 
+    </extensions> 
+  </build>  
+  <contributors><contributor><properties><provider>xinyuzhou.zxy@alibaba-inc.com</provider><codeName>alibaba-rocketmq</codeName><codeUrl>['git@gitlab.alibaba-inc.com:messaging/alibaba-rocketmq.git']@['commit 97f03258cf7dd3adc037ac05b942d35330079d10']</codeUrl><description>contributors added by SCM Plugin, please don't modify it!</description></properties></contributor></contributors>
+</project>
