@@ -14,7 +14,7 @@ import static com.aliyun.openservices.ons.api.impl.authority.SessionCredentials.
 
 
 /**
- * @auther lansheng.zj
+ * @author lansheng.zj
  */
 public abstract class AbstractRPCHook implements RPCHook {
     protected ConcurrentHashMap<Class<? extends CommandCustomHeader>, Field[]> fieldCache = new ConcurrentHashMap<>();

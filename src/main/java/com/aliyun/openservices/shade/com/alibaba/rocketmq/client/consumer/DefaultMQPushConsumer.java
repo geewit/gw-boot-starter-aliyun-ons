@@ -41,18 +41,14 @@ import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.exception.Rem
 
 /**
  * In most scenarios, this is the mostly recommended class to consume messages.
- * </p>
  *
  * Technically speaking, this push client is virtually a wrapper of the underlying pull service. Specifically, on
  * arrival of messages pulled from brokers, it roughly invokes the registered callback handler to feed the messages.
- * </p>
  *
  * See quickstart/Consumer in the example module for a typical usage.
- * </p>
  *
  * <p>
  * <strong>Thread Safety:</strong> After initialization, the instance can be regarded as thread-safe.
- * </p>
  */
 public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsumer {
 

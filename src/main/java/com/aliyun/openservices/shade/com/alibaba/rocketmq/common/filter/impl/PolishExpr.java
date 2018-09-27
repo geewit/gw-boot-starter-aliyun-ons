@@ -32,7 +32,7 @@ public class PolishExpr {
     }
 
     /**
-     * Shunting-yard algorithm <br/>
+     * Shunting-yard algorithm
      * http://en.wikipedia.org/wiki/Shunting_yard_algorithm
      *
      * @return the compute result of Shunting-yard algorithm

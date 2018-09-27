@@ -27,11 +27,10 @@ import java.util.Map;
  * Message selector: select message at server.
  * <p>
  * Now, support:
- * <li>Tag: {@link com.aliyun.openservices.shade.com.alibaba.rocketmq.common.filter.ExpressionType#TAG}
- * </li>
- * <li>SQL92: {@link com.aliyun.openservices.shade.com.alibaba.rocketmq.common.filter.ExpressionType#SQL92}
- * </li>
- * </p>
+ * Tag: {@link com.aliyun.openservices.shade.com.alibaba.rocketmq.common.filter.ExpressionType#TAG}
+ *
+ * SQL92: {@link com.aliyun.openservices.shade.com.alibaba.rocketmq.common.filter.ExpressionType#SQL92}
+ *
  */
 public class MessageSelector {
 

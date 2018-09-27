@@ -13,7 +13,8 @@ import java.nio.charset.StandardCharsets;
 
 
 /**
- * Created by manhong.yqd<jodie.yqd@gmail.com> on 15/2/2.
+ * @author manhong.yqd
+ * @since 15/2/2.
  */
 public class OnsAuthSigner {
     private static final Charset defaultCharset = StandardCharsets.UTF_8;

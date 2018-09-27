@@ -51,6 +51,7 @@ def getRepositoryPassword() {
 
 task javadocs(type: Jar, dependsOn: javadoc) {
     classifier = 'javadoc'
+    javadoc.failOnError false
     from javadoc.destinationDir
 }
 

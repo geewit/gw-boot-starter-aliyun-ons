@@ -39,15 +39,12 @@ import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.netty.NettyRe
 
 /**
  * This class is the entry point for applications intending to send messages.
- * </p>
  *
  * It's fine to tune fields which exposes getter/setter methods, but keep in mind, all of them should work well out of
  * box for most scenarios.
- * </p>
  *
  * This class aggregates various <code>send</code> methods to deliver messages to brokers. Each of them has pros and
  * cons; you'd better understand strengths and weakness of them before actually coding.
- * </p>
  *
  * <p>
  * <strong>Thread Safety:</strong> After configuring and starting process, this class can be regarded as thread-safe
@@ -157,13 +154,11 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
 
     /**
      * Start this producer instance.
-     * </p>
      *
      * <strong>
      * Much internal initializing procedures are carried out to make this instance prepared, thus, it's a must to invoke
      * this method before sending or querying messages.
      * </strong>
-     * </p>
      *
      * @throws MQClientException if there is any unexpected error.
      */
@@ -194,7 +189,6 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
 
     /**
      * Send message in synchronous mode. This method returns only when the sending procedure totally completes.
-     * </p>
      *
      * <strong>Warn:</strong> this method has internal retry-mechanism, that is, internal implementation will retry
      * {@link #retryTimesWhenSendFailed} times before claiming failure. As a result, multiple messages may potentially
@@ -234,10 +228,8 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
 
     /**
      * Send message to broker asynchronously.
-     * </p>
      *
      * This method returns immediately. On sending completion, <code>sendCallback</code> will be executed.
-     * </p>
      *
      * Similar to {@link #send(Message)}, internal implementation would potentially retry up to
      * {@link #retryTimesWhenSendAsyncFailed} times before claiming sending failure, which may yield message duplication
@@ -277,7 +269,6 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      *
      * @param msg Message to send.
      * @throws MQClientException if there is any client error.
-     * @throws RemotingException if there is any network-tier error.
      * @throws InterruptedException if the sending thread is interrupted.
      */
     @Override
@@ -592,9 +583,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      * @param topic Topic
      * @param msgId Message ID
      * @return Message specified.
-     * @throws MQBrokerException if there is any broker error.
      * @throws MQClientException if there is any client error.
-     * @throws RemotingException if there is any network-tier error.
      * @throws InterruptedException if the sending thread is interrupted.
      */
     @Override

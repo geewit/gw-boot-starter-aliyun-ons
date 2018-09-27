@@ -20,21 +20,20 @@ package com.aliyun.openservices.shade.com.alibaba.rocketmq.common.filter;
 public class ExpressionType {
 
     /**
-     * <ul>
      * Keywords:
+     * <ul>
      * <li>{@code AND, OR, NOT, BETWEEN, IN, TRUE, FALSE, IS, NULL}</li>
      * </ul>
-     * <p/>
-     * <ul>
+     *
      * Data type:
+     * <ul>
      * <li>Boolean, like: TRUE, FALSE</li>
      * <li>String, like: 'abc'</li>
      * <li>Decimal, like: 123</li>
      * <li>Float number, like: 3.1415</li>
      * </ul>
-     * <p/>
-     * <ul>
      * Grammar:
+     * <ul>
      * <li>{@code AND, OR}</li>
      * <li>{@code >, >=, <, <=, =}</li>
      * <li>{@code BETWEEN A AND B}, equals to {@code >=A AND <=B}</li>
@@ -43,10 +42,9 @@ public class ExpressionType {
      * <li>{@code IS NULL}, {@code IS NOT NULL}, check parameter whether is null, or not.</li>
      * <li>{@code =TRUE}, {@code =FALSE}, check parameter whether is true, or false.</li>
      * </ul>
-     * <p/>
      * <p>
      * Example:
-     * (a > 10 AND a < 100) OR (b IS NOT NULL AND b=TRUE)
+     * <pre>(a > 10 AND a < 100) OR (b IS NOT NULL AND b=TRUE)</pre>
      * </p>
      */
     public static final String SQL92 = "SQL92";
