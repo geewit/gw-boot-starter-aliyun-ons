@@ -42,10 +42,8 @@ public class ExpressionType {
      * <li>{@code IS NULL}, {@code IS NOT NULL}, check parameter whether is null, or not.</li>
      * <li>{@code =TRUE}, {@code =FALSE}, check parameter whether is true, or false.</li>
      * </ul>
-     * <p>
      * Example:
-     * <pre>(a > 10 AND a < 100) OR (b IS NOT NULL AND b=TRUE)</pre>
-     * </p>
+     * <pre>(a gt 10 AND a lt 100) OR (b IS NOT NULL AND b=TRUE)</pre>
      */
     public static final String SQL92 = "SQL92";
 
