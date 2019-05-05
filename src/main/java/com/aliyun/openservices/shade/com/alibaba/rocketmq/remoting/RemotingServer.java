@@ -16,14 +16,14 @@
  */
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting;
 
-import io.netty.channel.Channel;
+import com.aliyun.openservices.shade.io.netty.channel.Channel;
 import java.util.concurrent.ExecutorService;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.common.Pair;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.exception.RemotingSendRequestException;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.exception.RemotingTimeoutException;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.exception.RemotingTooMuchRequestException;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.netty.NettyRequestProcessor;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.RemotingCommand;
-import org.apache.commons.lang3.tuple.Pair;
 
 public interface RemotingServer extends RemotingService {
 

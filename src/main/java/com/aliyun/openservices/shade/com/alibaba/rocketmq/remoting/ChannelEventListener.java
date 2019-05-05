@@ -16,7 +16,7 @@
  */
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting;
 
-import io.netty.channel.Channel;
+import com.aliyun.openservices.shade.io.netty.channel.Channel;
 
 public interface ChannelEventListener {
     void onChannelConnect(final String remoteAddr, final Channel channel);

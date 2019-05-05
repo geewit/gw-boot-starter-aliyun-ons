@@ -35,6 +35,13 @@ public class ProducerBean implements Producer {
         this.producer.start();
     }
 
+    @Override
+    public void updateCredential(Properties credentialProperties) {
+        if (this.producer != null) {
+            this.producer.updateCredential(credentialProperties);
+        }
+    }
+
     /**
      * 关闭该{@code Producer}实例，建议配置为Bean的destroy-method
      */

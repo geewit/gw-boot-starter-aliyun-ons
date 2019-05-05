@@ -21,7 +21,7 @@ import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.Message
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.RemotingSerializable;
 
 public class TopicStatsTable extends RemotingSerializable {
-    private HashMap<MessageQueue, TopicOffset> offsetTable = new HashMap<>();
+    private HashMap<MessageQueue, TopicOffset> offsetTable = new HashMap<MessageQueue, TopicOffset>();
 
     public HashMap<MessageQueue, TopicOffset> getOffsetTable() {
         return offsetTable;

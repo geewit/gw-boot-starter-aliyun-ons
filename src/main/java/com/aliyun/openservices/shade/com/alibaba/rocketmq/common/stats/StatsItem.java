@@ -22,7 +22,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.UtilAll;
-import org.slf4j.Logger;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
 
 public class StatsItem {
 
@@ -30,19 +30,19 @@ public class StatsItem {
 
     private final AtomicLong times = new AtomicLong(0);
 
-    private final LinkedList<CallSnapshot> csListMinute = new LinkedList<>();
+    private final LinkedList<CallSnapshot> csListMinute = new LinkedList<CallSnapshot>();
 
-    private final LinkedList<CallSnapshot> csListHour = new LinkedList<>();
+    private final LinkedList<CallSnapshot> csListHour = new LinkedList<CallSnapshot>();
 
-    private final LinkedList<CallSnapshot> csListDay = new LinkedList<>();
+    private final LinkedList<CallSnapshot> csListDay = new LinkedList<CallSnapshot>();
 
     private final String statsName;
     private final String statsKey;
     private final ScheduledExecutorService scheduledExecutorService;
-    private final Logger log;
+    private final InternalLogger log;
 
     public StatsItem(String statsName, String statsKey, ScheduledExecutorService scheduledExecutorService,
-        Logger log) {
+        InternalLogger log) {
         this.statsName = statsName;
         this.statsKey = statsKey;
         this.scheduledExecutorService = scheduledExecutorService;
@@ -59,7 +59,10 @@ public class StatsItem {
                 CallSnapshot first = csList.getFirst();
                 CallSnapshot last = csList.getLast();
                 sum = last.getValue() - first.getValue();
-                tps = (sum * 1000.0d) / (last.getTimestamp() - first.getTimestamp());
+                long timeStampDiff = last.getTimestamp() - first.getTimestamp();
+                if (timeStampDiff > 0) {
+                    tps = (sum * 1000.0d) / timeStampDiff;
+                }
 
                 long timesDiff = last.getTimes() - first.getTimes();
                 if (timesDiff > 0) {
@@ -89,45 +92,63 @@ public class StatsItem {
 
     public void init() {
 
-        this.scheduledExecutorService.scheduleAtFixedRate(() -> {
-            try {
-                samplingInSeconds();
-            } catch (Throwable ignored) {
+        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    samplingInSeconds();
+                } catch (Throwable ignored) {
+                }
             }
         }, 0, 10, TimeUnit.SECONDS);
 
-        this.scheduledExecutorService.scheduleAtFixedRate(() -> {
-            try {
-                samplingInMinutes();
-            } catch (Throwable ignored) {
+        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    samplingInMinutes();
+                } catch (Throwable ignored) {
+                }
             }
         }, 0, 10, TimeUnit.MINUTES);
 
-        this.scheduledExecutorService.scheduleAtFixedRate(() -> {
-            try {
-                samplingInHour();
-            } catch (Throwable ignored) {
+        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    samplingInHour();
+                } catch (Throwable ignored) {
+                }
             }
         }, 0, 1, TimeUnit.HOURS);
 
-        this.scheduledExecutorService.scheduleAtFixedRate(() -> {
-            try {
-                printAtMinutes();
-            } catch (Throwable ignored) {
+        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    printAtMinutes();
+                } catch (Throwable ignored) {
+                }
             }
         }, Math.abs(UtilAll.computNextMinutesTimeMillis() - System.currentTimeMillis()), 1000 * 60, TimeUnit.MILLISECONDS);
 
-        this.scheduledExecutorService.scheduleAtFixedRate(() -> {
-            try {
-                printAtHour();
-            } catch (Throwable ignored) {
+        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    printAtHour();
+                } catch (Throwable ignored) {
+                }
             }
         }, Math.abs(UtilAll.computNextHourTimeMillis() - System.currentTimeMillis()), 1000 * 60 * 60, TimeUnit.MILLISECONDS);
 
-        this.scheduledExecutorService.scheduleAtFixedRate(() -> {
-            try {
-                printAtDay();
-            } catch (Throwable ignored) {
+        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    printAtDay();
+                } catch (Throwable ignored) {
+                }
             }
         }, Math.abs(UtilAll.computNextMorningTimeMillis() - System.currentTimeMillis()) - 2000, 1000 * 60 * 60 * 24, TimeUnit.MILLISECONDS);
     }
@@ -206,6 +227,10 @@ public class StatsItem {
 
     public AtomicLong getTimes() {
         return times;
+    }
+
+    public LinkedList<CallSnapshot> getCsListHour() {
+        return csListHour;
     }
 }
 

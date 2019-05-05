@@ -17,7 +17,7 @@
 
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.common.utils;
 
-import io.netty.channel.Channel;
+import com.aliyun.openservices.shade.io.netty.channel.Channel;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 

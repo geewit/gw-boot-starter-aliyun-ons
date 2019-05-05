@@ -1,5 +1,11 @@
 package com.aliyun.openservices.ons.api.bean;
 
+import java.lang.reflect.Method;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
+
 import com.aliyun.openservices.ons.api.Consumer;
 import com.aliyun.openservices.ons.api.ExpressionType;
 import com.aliyun.openservices.ons.api.MessageListener;
@@ -7,10 +13,6 @@ import com.aliyun.openservices.ons.api.MessageSelector;
 import com.aliyun.openservices.ons.api.ONSFactory;
 import com.aliyun.openservices.ons.api.PropertyKeyConst;
 import com.aliyun.openservices.ons.api.exception.ONSClientException;
-import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
 
 /**
  * {@code ConsumerBean}用于将{@link Consumer}集成至Spring Bean中
@@ -47,9 +49,11 @@ public class ConsumerBean implements Consumer {
 
         this.consumer = ONSFactory.createConsumer(this.properties);
 
-        for (Entry<Subscription, MessageListener> next : this.subscriptionTable.entrySet()) {
+        Iterator<Entry<Subscription, MessageListener>> it = this.subscriptionTable.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<Subscription, MessageListener> next = it.next();
             if ("com.aliyun.openservices.ons.api.impl.notify.ConsumerImpl".equals(this.consumer.getClass().getCanonicalName())
-                    && (next.getKey() instanceof SubscriptionExt)) {
+                && (next.getKey() instanceof SubscriptionExt)) {
                 SubscriptionExt subscription = (SubscriptionExt) next.getKey();
                 for (Method method : this.consumer.getClass().getMethods()) {
                     if ("subscribeNotify".equals(method.getName())) {
@@ -81,6 +85,13 @@ public class ConsumerBean implements Consumer {
         }
 
         this.consumer.start();
+    }
+
+    @Override
+    public void updateCredential(Properties credentialProperties) {
+        if (this.consumer != null) {
+            this.consumer.updateCredential(credentialProperties);
+        }
     }
 
     /**

@@ -20,7 +20,7 @@ import java.util.HashSet;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.RemotingSerializable;
 
 public class GroupList extends RemotingSerializable {
-    private HashSet<String> groupList = new HashSet<>();
+    private HashSet<String> groupList = new HashSet<String>();
 
     public HashSet<String> getGroupList() {
         return groupList;

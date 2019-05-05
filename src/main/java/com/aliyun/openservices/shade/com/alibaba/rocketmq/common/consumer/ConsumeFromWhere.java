@@ -26,5 +26,5 @@ public enum ConsumeFromWhere {
     @Deprecated
     CONSUME_FROM_MAX_OFFSET,
     CONSUME_FROM_FIRST_OFFSET,
-    CONSUME_FROM_TIMESTAMP
+    CONSUME_FROM_TIMESTAMP,
 }

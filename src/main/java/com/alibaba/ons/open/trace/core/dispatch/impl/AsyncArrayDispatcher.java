@@ -1,25 +1,5 @@
 package com.alibaba.ons.open.trace.core.dispatch.impl;
 
-import com.alibaba.ons.open.trace.core.common.OnsTraceConstants;
-import com.alibaba.ons.open.trace.core.common.OnsTraceContext;
-import com.alibaba.ons.open.trace.core.common.OnsTraceDataEncoder;
-import com.alibaba.ons.open.trace.core.common.OnsTraceDispatcherType;
-import com.alibaba.ons.open.trace.core.common.OnsTraceTransferBean;
-import com.alibaba.ons.open.trace.core.dispatch.AsyncDispatcher;
-import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.common.ThreadLocalIndex;
-import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.exception.MQClientException;
-import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl;
-import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.impl.producer.DefaultMQProducerImpl;
-import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.impl.producer.TopicPublishInfo;
-import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.producer.DefaultMQProducer;
-import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.producer.SendCallback;
-import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.producer.SendResult;
-import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.ThreadFactoryImpl;
-import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.Message;
-import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageQueue;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,18 +13,43 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
+
+import com.alibaba.ons.open.trace.core.common.OnsTraceConstants;
+import com.alibaba.ons.open.trace.core.common.OnsTraceContext;
+import com.alibaba.ons.open.trace.core.common.OnsTraceDataEncoder;
+import com.alibaba.ons.open.trace.core.common.OnsTraceDispatcherType;
+import com.alibaba.ons.open.trace.core.common.OnsTraceTransferBean;
+import com.alibaba.ons.open.trace.core.dispatch.AsyncDispatcher;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.common.ThreadLocalIndex;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.exception.MQClientException;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.impl.producer.DefaultMQProducerImpl;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.impl.producer.TopicPublishInfo;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.log.ClientLogger;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.producer.DefaultMQProducer;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.producer.MessageQueueSelector;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.producer.SendCallback;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.producer.SendResult;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.ThreadFactoryImpl;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.Message;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageQueue;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.NamespaceUtil;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
+
+import com.aliyun.openservices.ons.api.impl.authority.SessionCredentials;
 
 /**
- * Created by alvin on 16-8-25.
+ * @author MQDevelopers
  */
 public class AsyncArrayDispatcher implements AsyncDispatcher {
-    private final static Logger logger = LoggerFactory.getLogger("AliyunONS-client");
+    private final static InternalLogger CLIENT_LOG = ClientLogger.getLog();
     private final int queueSize;
     private final int batchSize;
     private final DefaultMQProducer traceProducer;
     private final ThreadPoolExecutor traceExecuter;
-    // 最近丢弃的日志条数
+    /**
+     * 最近丢弃的日志条数
+     */
     private AtomicLong discardCount;
     private Thread worker;
     private ArrayBlockingQueue<OnsTraceContext> traceContextQueue;
@@ -57,7 +62,7 @@ public class AsyncArrayDispatcher implements AsyncDispatcher {
     private volatile ThreadLocalIndex sendWhichQueue = new ThreadLocalIndex();
     private String dispatcherId = UUID.randomUUID().toString();
 
-    public AsyncArrayDispatcher(Properties properties) {
+    public AsyncArrayDispatcher(Properties properties) throws MQClientException {
         dispatcherType = properties.getProperty(OnsTraceConstants.TraceDispatcherType);
         int queueSize = Integer.parseInt(properties.getProperty(OnsTraceConstants.AsyncBufferSize, "2048"));
         // queueSize 取大于或等于 value 的 2 的 n 次方数
@@ -65,8 +70,8 @@ public class AsyncArrayDispatcher implements AsyncDispatcher {
         this.queueSize = queueSize;
         batchSize = Integer.parseInt(properties.getProperty(OnsTraceConstants.MaxBatchNum, "1"));
         this.discardCount = new AtomicLong(0L);
-        traceContextQueue = new ArrayBlockingQueue<>(1024);
-        appenderQueue = new ArrayBlockingQueue<>(queueSize);
+        traceContextQueue = new ArrayBlockingQueue<OnsTraceContext>(1024);
+        appenderQueue = new ArrayBlockingQueue<Runnable>(queueSize);
 
         this.traceExecuter = new ThreadPoolExecutor(//
             10, //
@@ -76,6 +81,27 @@ public class AsyncArrayDispatcher implements AsyncDispatcher {
             this.appenderQueue, //
             new ThreadFactoryImpl("MQTraceSendThread_"));
         traceProducer = TraceProducerFactory.getTraceDispatcherProducer(properties);
+    }
+
+    public AsyncArrayDispatcher(Properties properties, SessionCredentials sessionCredentials) throws MQClientException {
+        dispatcherType = properties.getProperty(OnsTraceConstants.TraceDispatcherType);
+        int queueSize = Integer.parseInt(properties.getProperty(OnsTraceConstants.AsyncBufferSize, "2048"));
+        // queueSize 取大于或等于 value 的 2 的 n 次方数
+        queueSize = 1 << (32 - Integer.numberOfLeadingZeros(queueSize - 1));
+        this.queueSize = queueSize;
+        batchSize = Integer.parseInt(properties.getProperty(OnsTraceConstants.MaxBatchNum, "1"));
+        this.discardCount = new AtomicLong(0L);
+        traceContextQueue = new ArrayBlockingQueue<OnsTraceContext>(1024);
+        appenderQueue = new ArrayBlockingQueue<Runnable>(queueSize);
+
+        this.traceExecuter = new ThreadPoolExecutor(
+            10,
+            20,
+            1000 * 60,
+            TimeUnit.MILLISECONDS,
+            this.appenderQueue,
+            new ThreadFactoryImpl("MQTraceSendThread_"));
+        traceProducer = TraceProducerFactory.getTraceDispatcherProducer(properties, sessionCredentials);
     }
 
     public DefaultMQProducerImpl getHostProducer() {
@@ -94,10 +120,11 @@ public class AsyncArrayDispatcher implements AsyncDispatcher {
         this.hostConsumer = hostConsumer;
     }
 
+    @Override
     public void start() throws MQClientException {
         TraceProducerFactory.registerTraceDispatcher(dispatcherId);
-        this.worker = new Thread(new AsyncRunnable(), "MQ-AsyncArrayDispatcher-Thread-" + dispatcherId);
-        this.worker.setDaemon(true);
+        this.worker = new ThreadFactoryImpl("MQ-AsyncArrayDispatcher-Thread-" + dispatcherId, true)
+            .newThread(new AsyncRunnable());
         this.worker.start();
         this.registerShutDownHook();
     }
@@ -106,7 +133,7 @@ public class AsyncArrayDispatcher implements AsyncDispatcher {
     public boolean append(final Object ctx) {
         boolean result = traceContextQueue.offer((OnsTraceContext) ctx);
         if (!result) {
-            logger.info("buffer full" + discardCount.incrementAndGet() + " ,context is " + ctx);
+            CLIENT_LOG.info("buffer full" + discardCount.incrementAndGet() + " ,context is " + ctx);
         }
         return result;
     }
@@ -122,7 +149,7 @@ public class AsyncArrayDispatcher implements AsyncDispatcher {
                 break;
             }
         }
-        logger.info("------end trace send " + traceContextQueue.size() + "   " + appenderQueue.size());
+        CLIENT_LOG.info("------end trace send " + traceContextQueue.size() + "   " + appenderQueue.size());
     }
 
     @Override
@@ -135,9 +162,8 @@ public class AsyncArrayDispatcher implements AsyncDispatcher {
 
     public void registerShutDownHook() {
         if (shutDownHook == null) {
-            shutDownHook = new Thread(new Runnable() {
+            shutDownHook = new ThreadFactoryImpl("ShutdownHookMQTrace").newThread(new Runnable() {
                 private volatile boolean hasShutdown = false;
-
                 @Override
                 public void run() {
                     synchronized (this) {
@@ -145,12 +171,12 @@ public class AsyncArrayDispatcher implements AsyncDispatcher {
                             try {
                                 flush();
                             } catch (IOException e) {
-                                logger.error("system mqtrace hook shutdown failed ,maybe loss some trace data");
+                                CLIENT_LOG.error("system mqtrace hook shutdown failed ,maybe loss some trace data");
                             }
                         }
                     }
                 }
-            }, "ShutdownHookMQTrace");
+            });
             Runtime.getRuntime().addShutdownHook(shutDownHook);
         }
     }
@@ -167,12 +193,12 @@ public class AsyncArrayDispatcher implements AsyncDispatcher {
         @Override
         public void run() {
             while (!stopped) {
-                List<OnsTraceContext> contexts = new ArrayList<>(batchSize);
+                List<OnsTraceContext> contexts = new ArrayList<OnsTraceContext>(batchSize);
                 for (int i = 0; i < batchSize; i++) {
                     OnsTraceContext context = null;
                     try {
                         context = traceContextQueue.poll(5, TimeUnit.MILLISECONDS);
-                    } catch (InterruptedException ignored) {
+                    } catch (InterruptedException e) {
                     }
                     if (context != null) {
                         contexts.add(context);
@@ -198,7 +224,7 @@ public class AsyncArrayDispatcher implements AsyncDispatcher {
             if (contextList != null) {
                 this.contextList = contextList;
             } else {
-                this.contextList = new ArrayList<>(1);
+                this.contextList = new ArrayList<OnsTraceContext>(1);
             }
         }
 
@@ -213,8 +239,8 @@ public class AsyncArrayDispatcher implements AsyncDispatcher {
          * @param contextList
          */
         public void sendTraceData(List<OnsTraceContext> contextList) {
-            Map<String, List<OnsTraceTransferBean>> transBeanMap = new HashMap<>();
-            String currentRegionId;
+            Map<String, List<OnsTraceTransferBean>> transBeanMap = new HashMap<String, List<OnsTraceTransferBean>>(16);
+            String currentRegionId = null;
             for (OnsTraceContext context : contextList) {
                 currentRegionId = context.getRegionId();
                 if (currentRegionId == null || context.getTraceBeans().isEmpty()) {
@@ -222,7 +248,11 @@ public class AsyncArrayDispatcher implements AsyncDispatcher {
                 }
                 String topic = context.getTraceBeans().get(0).getTopic();
                 String key = topic + OnsTraceConstants.CONTENT_SPLITOR + currentRegionId;
-                List<OnsTraceTransferBean> transBeanList = transBeanMap.computeIfAbsent(key, k -> new ArrayList<>());
+                List<OnsTraceTransferBean> transBeanList = transBeanMap.get(key);
+                if (transBeanList == null) {
+                    transBeanList = new ArrayList<OnsTraceTransferBean>();
+                    transBeanMap.put(key, transBeanList);
+                }
                 OnsTraceTransferBean traceData = OnsTraceDataEncoder.encoderFromContextBean(context);
                 transBeanList.add(traceData);
             }
@@ -242,7 +272,7 @@ public class AsyncArrayDispatcher implements AsyncDispatcher {
             // 临时缓冲区
             StringBuilder buffer = new StringBuilder(1024);
             int count = 0;
-            Set<String> keySet = new HashSet<>();
+            Set<String> keySet = new HashSet<String>();
 
             for (OnsTraceTransferBean bean : transBeanList) {
                 keySet.addAll(bean.getTransKey());
@@ -286,23 +316,40 @@ public class AsyncArrayDispatcher implements AsyncDispatcher {
                     @Override
                     public void onException(Throwable e) {
                         //todo 对于发送失败的数据，如何保存，保证所有轨迹数据都记录下来
-                        logger.info("send trace data ,the traceData is " + data);
+                        CLIENT_LOG.info("send trace data ,the traceData is " + data);
                     }
                 };
                 if (dataBrokerSet.isEmpty()) {
                     //no cross set
                     traceProducer.send(message, callback, 5000);
                 } else {
-                    traceProducer.send(message, this::select, dataBrokerSet, callback);
+                    traceProducer.send(message, new MessageQueueSelector() {
+                        @Override
+                        public MessageQueue select(List<MessageQueue> mqs, Message msg, Object arg) {
+                            Set<String> brokerSet = (Set<String>) arg;
+                            List<MessageQueue> filterMqs = new ArrayList<MessageQueue>();
+                            for (MessageQueue queue : mqs) {
+                                if (brokerSet.contains(queue.getBrokerName())) {
+                                    filterMqs.add(queue);
+                                }
+                            }
+                            int index = sendWhichQueue.getAndIncrement();
+                            int pos = Math.abs(index) % filterMqs.size();
+                            if (pos < 0) {
+                                pos = 0;
+                            }
+                            return filterMqs.get(pos);
+                        }
+                    }, dataBrokerSet, callback);
                 }
 
             } catch (Exception e) {
-                logger.info("send trace data,the traceData is" + data);
+                CLIENT_LOG.info("send trace data,the traceData is" + data);
             }
         }
 
         private Set<String> getBrokerSetByTopic(String topic) {
-            Set<String> brokerSet = new HashSet<>();
+            Set<String> brokerSet = new HashSet<String>();
             if (dispatcherType != null && dispatcherType.equals(OnsTraceDispatcherType.PRODUCER.name()) && hostProducer != null) {
                 brokerSet = tryGetMessageQueueBrokerSet(hostProducer, topic);
             }
@@ -313,40 +360,34 @@ public class AsyncArrayDispatcher implements AsyncDispatcher {
         }
 
         private Set<String> tryGetMessageQueueBrokerSet(DefaultMQProducerImpl producer, String topic) {
-            Set<String> brokerSet = new HashSet<>();
-            TopicPublishInfo topicPublishInfo = producer.getTopicPublishInfoTable().get(topic);
+            Set<String> brokerSet = new HashSet<String>();
+            String realTopic = NamespaceUtil.wrapNamespace(producer.getDefaultMQProducer().getNamespace(), topic);
+            TopicPublishInfo topicPublishInfo = producer.getTopicPublishInfoTable().get(realTopic);
             if (null == topicPublishInfo || !topicPublishInfo.ok()) {
-                producer.getTopicPublishInfoTable().putIfAbsent(topic, new TopicPublishInfo());
-                producer.getmQClientFactory().updateTopicRouteInfoFromNameServer(topic);
-                topicPublishInfo = producer.getTopicPublishInfoTable().get(topic);
+                producer.getTopicPublishInfoTable().putIfAbsent(realTopic, new TopicPublishInfo());
+                producer.getmQClientFactory().updateTopicRouteInfoFromNameServer(realTopic);
+                topicPublishInfo = producer.getTopicPublishInfoTable().get(realTopic);
             }
             if (topicPublishInfo.isHaveTopicRouterInfo() || topicPublishInfo.ok()) {
-                brokerSet = topicPublishInfo.getMessageQueueList().stream().map(MessageQueue::getBrokerName).collect(Collectors.toSet());
+                for (MessageQueue queue : topicPublishInfo.getMessageQueueList()) {
+                    brokerSet.add(queue.getBrokerName());
+                }
             }
             return brokerSet;
         }
 
         private Set<String> tryGetMessageQueueBrokerSet(DefaultMQPushConsumerImpl consumer, String topic) {
-            Set<String> brokerSet = new HashSet<>();
+            Set<String> brokerSet = new HashSet<String>();
             try {
-                Set<MessageQueue> messageQueues = consumer.fetchSubscribeMessageQueues(topic);
-                brokerSet = messageQueues.stream().map(MessageQueue::getBrokerName).collect(Collectors.toSet());
+                String realTopic = NamespaceUtil.wrapNamespace(consumer.getDefaultMQPushConsumer().getNamespace(), topic);
+                Set<MessageQueue> messageQueues = consumer.fetchSubscribeMessageQueues(realTopic);
+                for (MessageQueue queue : messageQueues) {
+                    brokerSet.add(queue.getBrokerName());
+                }
             } catch (MQClientException e) {
-                logger.info("fetch message queue failed, the topic is {}", topic);
+                CLIENT_LOG.info("fetch message queue failed, the topic is {}", topic);
             }
             return brokerSet;
-        }
-
-        @SuppressWarnings({"unchecked", "rawtypes"})
-        private MessageQueue select(List<MessageQueue> mqs, Message msg, Object arg) {
-            Set<String> brokerSet = (Set<String>) arg;
-            List<MessageQueue> filterMqs = mqs.stream().filter(queue -> brokerSet.contains(queue.getBrokerName())).collect(Collectors.toList());
-            int index = sendWhichQueue.getAndIncrement();
-            int pos = Math.abs(index) % filterMqs.size();
-            if (pos < 0) {
-                pos = 0;
-            }
-            return filterMqs.get(pos);
         }
     }
 }

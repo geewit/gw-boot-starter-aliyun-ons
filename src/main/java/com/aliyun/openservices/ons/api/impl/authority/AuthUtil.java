@@ -1,21 +1,24 @@
 package com.aliyun.openservices.ons.api.impl.authority;
 
-import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.RemotingCommand;
-
+import java.util.Map;
 import java.util.SortedMap;
+
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.RemotingCommand;
 
 import static com.aliyun.openservices.ons.api.impl.authority.SessionCredentials.CHARSET;
 
-
+/**
+ * @author MQDevelopers
+ */
 public class AuthUtil {
     public static byte[] combineRequestContent(RemotingCommand request, SortedMap<String, String> fieldsMap) {
         try {
-            StringBuilder sb = new StringBuilder();
-            fieldsMap.forEach((key, value) -> {
-                if (!SessionCredentials.Signature.equals(key)) {
-                    sb.append(value);
+            StringBuilder sb = new StringBuilder("");
+            for (Map.Entry<String, String> entry : fieldsMap.entrySet()) {
+                if (!SessionCredentials.Signature.equals(entry.getKey())) {
+                    sb.append(entry.getValue());
                 }
-            });
+            }
 
             return AuthUtil.combineBytes(sb.toString().getBytes(CHARSET), request.getBody());
         } catch (Exception e) {
@@ -30,8 +33,8 @@ public class AuthUtil {
         if (null != b1) {
             System.arraycopy(b1, 0, total, 0, b1.length);
         }
-        if (null != b1 && null != b2) {
-                System.arraycopy(b2, 0, total, b1.length, b2.length);
+        if (null != b2) {
+            System.arraycopy(b2, 0, total, b1.length, b2.length);
         }
         return total;
     }

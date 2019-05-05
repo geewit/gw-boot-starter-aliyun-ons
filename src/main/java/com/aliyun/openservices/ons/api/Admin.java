@@ -1,5 +1,7 @@
 package com.aliyun.openservices.ons.api;
 
+import java.util.Properties;
+
 /**
  * 管理类接口
  */
@@ -25,6 +27,12 @@ public interface Admin {
      */
     void start();
 
+    /**
+     * 更新凭据 (AccessKey/SecretKey/SecurityToken/ONSChannel)
+     * 动态更新访问凭据
+     * @param credentialProperties STSToken相关的信息
+     */
+    void updateCredential(Properties credentialProperties);
 
     /**
      * 关闭服务

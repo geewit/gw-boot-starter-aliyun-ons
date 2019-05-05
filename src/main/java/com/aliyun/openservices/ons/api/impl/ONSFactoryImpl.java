@@ -1,6 +1,8 @@
 package com.aliyun.openservices.ons.api.impl;
 
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.producer.LocalTransactionState;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.producer.TransactionCheckListener;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageExt;
 import com.aliyun.openservices.ons.api.Constants;
 import com.aliyun.openservices.ons.api.Consumer;
 import com.aliyun.openservices.ons.api.Message;
@@ -50,21 +52,23 @@ public class ONSFactoryImpl implements ONSFactoryAPI {
         return new OrderConsumerImpl(ONSUtil.extractProperties(properties));
     }
 
-
     @Override
     public TransactionProducer createTransactionProducer(Properties properties,
                                                          final LocalTransactionChecker checker) {
-        return new TransactionProducerImpl(ONSUtil.extractProperties(properties), msg -> {
-            String msgId = msg.getProperty(Constants.TRANSACTION_ID);
-            Message message = ONSUtil.msgConvert(msg);
-            message.setMsgID(msgId);
-            TransactionStatus check = checker.check(message);
-            if (TransactionStatus.CommitTransaction == check) {
-                return LocalTransactionState.COMMIT_MESSAGE;
-            } else if (TransactionStatus.RollbackTransaction == check) {
-                return LocalTransactionState.ROLLBACK_MESSAGE;
+        return new TransactionProducerImpl(ONSUtil.extractProperties(properties), new TransactionCheckListener() {
+            @Override
+            public LocalTransactionState checkLocalTransactionState(MessageExt msg) {
+                String msgId = msg.getProperty(Constants.TRANSACTION_ID);
+                Message message = ONSUtil.msgConvert(msg);
+                message.setMsgID(msgId);
+                TransactionStatus check = checker.check(message);
+                if (TransactionStatus.CommitTransaction == check) {
+                    return LocalTransactionState.COMMIT_MESSAGE;
+                } else if (TransactionStatus.RollbackTransaction == check) {
+                    return LocalTransactionState.ROLLBACK_MESSAGE;
+                }
+                return LocalTransactionState.UNKNOW;
             }
-            return LocalTransactionState.UNKNOW;
         });
     }
 }

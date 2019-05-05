@@ -27,10 +27,11 @@ import java.util.Map;
  * Message selector: select message at server.
  * <p>
  * Now, support:
- * Tag: {@link com.aliyun.openservices.shade.com.alibaba.rocketmq.common.filter.ExpressionType#TAG}
- *
- * SQL92: {@link com.aliyun.openservices.shade.com.alibaba.rocketmq.common.filter.ExpressionType#SQL92}
- *
+ * <li>Tag: {@link com.aliyun.openservices.shade.com.alibaba.rocketmq.common.filter.ExpressionType#TAG}
+ * </li>
+ * <li>SQL92: {@link com.aliyun.openservices.shade.com.alibaba.rocketmq.common.filter.ExpressionType#SQL92}
+ * </li>
+ * </p>
  */
 public class MessageSelector {
 
@@ -46,7 +47,7 @@ public class MessageSelector {
     /**
      * self define properties, just an extend point.
      */
-    private Map<String, String> properties = new HashMap<>(4);
+    private Map<String, String> properties = new HashMap<String, String>(4);
 
     private MessageSelector(String type, String expression) {
         this.type = type;
@@ -80,7 +81,7 @@ public class MessageSelector {
     }
 
     public void putProperty(String key, String value) {
-        if (key == null || value == null || "".equals(key.trim()) || "".equals(value.trim())) {
+        if (key == null || value == null || key.trim() == "" || value.trim() == "") {
             throw new IllegalArgumentException(
                 "Key and Value can not be null or empty string!"
             );

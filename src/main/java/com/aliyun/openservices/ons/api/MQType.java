@@ -17,8 +17,15 @@
 package com.aliyun.openservices.ons.api;
 
 public enum MQType {
+    /**
+     * 表明是Notify的消息
+     */
+    NOTIFY("NOTIFY"),
+    /**
+     * 表明是Metaq的消息
+     */
+    METAQ("METAQ");
 
-    NOTIFY("NOTIFY"), METAQ("METAQ");
     private String name;
 
     MQType(String name) {

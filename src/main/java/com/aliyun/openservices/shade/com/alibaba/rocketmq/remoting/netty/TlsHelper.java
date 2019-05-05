@@ -17,13 +17,13 @@
 
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.netty;
 
-import io.netty.handler.ssl.ClientAuth;
-import io.netty.handler.ssl.OpenSsl;
-import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
-import io.netty.handler.ssl.SslProvider;
-import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
-import io.netty.handler.ssl.util.SelfSignedCertificate;
+import com.aliyun.openservices.shade.io.netty.handler.ssl.ClientAuth;
+import com.aliyun.openservices.shade.io.netty.handler.ssl.OpenSsl;
+import com.aliyun.openservices.shade.io.netty.handler.ssl.SslContext;
+import com.aliyun.openservices.shade.io.netty.handler.ssl.SslContextBuilder;
+import com.aliyun.openservices.shade.io.netty.handler.ssl.SslProvider;
+import com.aliyun.openservices.shade.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import com.aliyun.openservices.shade.io.netty.handler.ssl.util.SelfSignedCertificate;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -31,8 +31,8 @@ import java.io.InputStream;
 import java.security.cert.CertificateException;
 import java.util.Properties;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.common.RemotingHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLoggerFactory;
 
 import static com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.netty.TlsSystemConfig.TLS_CLIENT_AUTHSERVER;
 import static com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.netty.TlsSystemConfig.TLS_CLIENT_CERTPATH;
@@ -73,9 +73,15 @@ public class TlsHelper {
         InputStream decryptPrivateKey(String privateKeyEncryptPath, boolean forClient) throws IOException;
     }
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
+    private static final InternalLogger LOGGER = InternalLoggerFactory.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
 
-    private static DecryptionStrategy decryptionStrategy = (privateKeyEncryptPath, forClient) -> new FileInputStream(privateKeyEncryptPath);
+    private static DecryptionStrategy decryptionStrategy = new DecryptionStrategy() {
+        @Override
+        public InputStream decryptPrivateKey(final String privateKeyEncryptPath,
+            final boolean forClient) throws IOException {
+            return new FileInputStream(privateKeyEncryptPath);
+        }
+    };
 
 
     public static void registerDecryptionStrategy(final DecryptionStrategy decryptionStrategy) {
@@ -90,10 +96,10 @@ public class TlsHelper {
         SslProvider provider;
         if (OpenSsl.isAvailable()) {
             provider = SslProvider.OPENSSL;
-            LOGGER.debug("Using OpenSSL provider");
+            LOGGER.info("Using OpenSSL provider");
         } else {
             provider = SslProvider.JDK;
-            LOGGER.debug("Using JDK SSL provider");
+            LOGGER.info("Using JDK SSL provider");
         }
 
         if (forClient) {
@@ -153,7 +159,7 @@ public class TlsHelper {
 
     private static void extractTlsConfigFromFile(final File configFile) {
         if (!(configFile.exists() && configFile.isFile() && configFile.canRead())) {
-            LOGGER.debug("Tls config file doesn't exist, skip it");
+            LOGGER.info("Tls config file doesn't exist, skip it");
             return;
         }
 
@@ -189,20 +195,20 @@ public class TlsHelper {
     }
 
     private static void logTheFinalUsedTlsConfig() {
-        LOGGER.debug("Log the final used tls related configuration");
-        LOGGER.debug("{} = {}", TLS_TEST_MODE_ENABLE, tlsTestModeEnable);
-        LOGGER.debug("{} = {}", TLS_SERVER_NEED_CLIENT_AUTH, tlsServerNeedClientAuth);
-        LOGGER.debug("{} = {}", TLS_SERVER_KEYPATH, tlsServerKeyPath);
-        LOGGER.debug("{} = {}", TLS_SERVER_KEYPASSWORD, tlsServerKeyPassword);
-        LOGGER.debug("{} = {}", TLS_SERVER_CERTPATH, tlsServerCertPath);
-        LOGGER.debug("{} = {}", TLS_SERVER_AUTHCLIENT, tlsServerAuthClient);
-        LOGGER.debug("{} = {}", TLS_SERVER_TRUSTCERTPATH, tlsServerTrustCertPath);
+        LOGGER.info("Log the final used tls related configuration");
+        LOGGER.info("{} = {}", TLS_TEST_MODE_ENABLE, tlsTestModeEnable);
+        LOGGER.info("{} = {}", TLS_SERVER_NEED_CLIENT_AUTH, tlsServerNeedClientAuth);
+        LOGGER.info("{} = {}", TLS_SERVER_KEYPATH, tlsServerKeyPath);
+        LOGGER.info("{} = {}", TLS_SERVER_KEYPASSWORD, tlsServerKeyPassword);
+        LOGGER.info("{} = {}", TLS_SERVER_CERTPATH, tlsServerCertPath);
+        LOGGER.info("{} = {}", TLS_SERVER_AUTHCLIENT, tlsServerAuthClient);
+        LOGGER.info("{} = {}", TLS_SERVER_TRUSTCERTPATH, tlsServerTrustCertPath);
 
-        LOGGER.debug("{} = {}", TLS_CLIENT_KEYPATH, tlsClientKeyPath);
-        LOGGER.debug("{} = {}", TLS_CLIENT_KEYPASSWORD, tlsClientKeyPassword);
-        LOGGER.debug("{} = {}", TLS_CLIENT_CERTPATH, tlsClientCertPath);
-        LOGGER.debug("{} = {}", TLS_CLIENT_AUTHSERVER, tlsClientAuthServer);
-        LOGGER.debug("{} = {}", TLS_CLIENT_TRUSTCERTPATH, tlsClientTrustCertPath);
+        LOGGER.info("{} = {}", TLS_CLIENT_KEYPATH, tlsClientKeyPath);
+        LOGGER.info("{} = {}", TLS_CLIENT_KEYPASSWORD, tlsClientKeyPassword);
+        LOGGER.info("{} = {}", TLS_CLIENT_CERTPATH, tlsClientCertPath);
+        LOGGER.info("{} = {}", TLS_CLIENT_AUTHSERVER, tlsClientAuthServer);
+        LOGGER.info("{} = {}", TLS_CLIENT_TRUSTCERTPATH, tlsClientTrustCertPath);
     }
 
     private static ClientAuth parseClientAuthMode(String authMode) {

@@ -1,11 +1,19 @@
 package com.aliyun.openservices.ons.api.impl.rocketmq;
 
 /**
- * @author  manhong.yqd
- * @since 15/1/13.
+ * @author MQDevelopers
  */
 public enum ONSChannel {
+    /**
+     * 聚石塔
+     */
     CLOUD,
+    /**
+     * 阿里云
+     */
     ALIYUN,
+    /**
+     * 其他
+     */
     ALL
 }

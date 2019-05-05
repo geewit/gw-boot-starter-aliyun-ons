@@ -61,7 +61,7 @@ public class TopicConfig {
 
     public boolean decode(final String in) {
         String[] strs = in.split(SEPARATOR);
-        if (strs.length == 5) {
+        if (strs != null && strs.length == 5) {
             this.topicName = strs[0];
 
             this.readQueueNums = Integer.parseInt(strs[1]);
@@ -136,33 +136,25 @@ public class TopicConfig {
 
     @Override
     public boolean equals(final Object o) {
-        if (this == o) {
+        if (this == o)
             return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
+        if (o == null || getClass() != o.getClass())
             return false;
-        }
 
         final TopicConfig that = (TopicConfig) o;
 
-        if (readQueueNums != that.readQueueNums) {
+        if (readQueueNums != that.readQueueNums)
             return false;
-        }
-        if (writeQueueNums != that.writeQueueNums) {
+        if (writeQueueNums != that.writeQueueNums)
             return false;
-        }
-        if (perm != that.perm) {
+        if (perm != that.perm)
             return false;
-        }
-        if (topicSysFlag != that.topicSysFlag) {
+        if (topicSysFlag != that.topicSysFlag)
             return false;
-        }
-        if (order != that.order) {
+        if (order != that.order)
             return false;
-        }
-        if (topicName != null ? !topicName.equals(that.topicName) : that.topicName != null) {
+        if (topicName != null ? !topicName.equals(that.topicName) : that.topicName != null)
             return false;
-        }
         return topicFilterType == that.topicFilterType;
 
     }

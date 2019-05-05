@@ -1,10 +1,15 @@
 package com.aliyun.openservices.ons.api.impl.rocketmq;
 
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.consumer.listener.ConsumeOrderlyContext;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.consumer.listener.ConsumeOrderlyStatus;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.consumer.listener.MessageListenerOrderly;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.UtilAll;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageExt;
+
 import com.aliyun.openservices.ons.api.Message;
 import com.aliyun.openservices.ons.api.MessageSelector;
 import com.aliyun.openservices.ons.api.PropertyKeyConst;
@@ -13,12 +18,9 @@ import com.aliyun.openservices.ons.api.order.ConsumeOrderContext;
 import com.aliyun.openservices.ons.api.order.MessageOrderListener;
 import com.aliyun.openservices.ons.api.order.OrderAction;
 import com.aliyun.openservices.ons.api.order.OrderConsumer;
-import java.util.List;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class OrderConsumerImpl extends ONSConsumerAbstract implements OrderConsumer {
-    private final ConcurrentHashMap<String/* Topic */, MessageOrderListener> subscribeTable = new ConcurrentHashMap<String, MessageOrderListener>();
+    private final ConcurrentHashMap<String, MessageOrderListener> subscribeTable = new ConcurrentHashMap<String, MessageOrderListener>();
 
     public OrderConsumerImpl(final Properties properties) {
         super(properties);

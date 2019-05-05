@@ -21,7 +21,7 @@ import java.util.Map;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.RemotingSerializable;
 
 public class QueryCorrectionOffsetBody extends RemotingSerializable {
-    private Map<Integer, Long> correctionOffsets = new HashMap<>();
+    private Map<Integer, Long> correctionOffsets = new HashMap<Integer, Long>();
 
     public Map<Integer, Long> getCorrectionOffsets() {
         return correctionOffsets;

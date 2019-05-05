@@ -27,13 +27,13 @@ import java.util.concurrent.atomic.AtomicLong;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.exception.MQBrokerException;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.exception.MQClientException;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.impl.factory.MQClientInstance;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.log.ClientLogger;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.MixAll;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.UtilAll;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.help.FAQUrl;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageQueue;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.exception.RemotingException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Local storage implementation
@@ -42,11 +42,12 @@ public class LocalFileOffsetStore implements OffsetStore {
     public final static String LOCAL_OFFSET_STORE_DIR = System.getProperty(
         "rocketmq.client.localOffsetStoreDir",
         System.getProperty("user.home") + File.separator + ".rocketmq_offsets");
-    private final static Logger log = LoggerFactory.getLogger("AliyunONS-client");
+    private final static InternalLogger log = ClientLogger.getLog();
     private final MQClientInstance mQClientFactory;
     private final String groupName;
     private final String storePath;
-    private ConcurrentMap<MessageQueue, AtomicLong> offsetTable = new ConcurrentHashMap<>();
+    private ConcurrentMap<MessageQueue, AtomicLong> offsetTable =
+        new ConcurrentHashMap<MessageQueue, AtomicLong>();
 
     public LocalFileOffsetStore(MQClientInstance mQClientFactory, String groupName) {
         this.mQClientFactory = mQClientFactory;
@@ -160,13 +161,14 @@ public class LocalFileOffsetStore implements OffsetStore {
     }
 
     @Override
-    public void updateConsumeOffsetToBroker(final MessageQueue mq, final long offset, final boolean isOneway) {
+    public void updateConsumeOffsetToBroker(final MessageQueue mq, final long offset, final boolean isOneway)
+        throws RemotingException, MQBrokerException, InterruptedException, MQClientException {
 
     }
 
     @Override
     public Map<MessageQueue, Long> cloneOffsetTable(String topic) {
-        Map<MessageQueue, Long> cloneOffsetTable = new HashMap<>();
+        Map<MessageQueue, Long> cloneOffsetTable = new HashMap<MessageQueue, Long>();
         for (Map.Entry<MessageQueue, AtomicLong> entry : this.offsetTable.entrySet()) {
             MessageQueue mq = entry.getKey();
             if (!UtilAll.isBlank(topic) && !topic.equals(mq.getTopic())) {
@@ -188,7 +190,7 @@ public class LocalFileOffsetStore implements OffsetStore {
         if (null == content || content.length() == 0) {
             return this.readLocalOffsetBak();
         } else {
-            OffsetSerializeWrapper offsetSerializeWrapper;
+            OffsetSerializeWrapper offsetSerializeWrapper = null;
             try {
                 offsetSerializeWrapper =
                     OffsetSerializeWrapper.fromJson(content, OffsetSerializeWrapper.class);
@@ -209,7 +211,7 @@ public class LocalFileOffsetStore implements OffsetStore {
             log.warn("Load local offset store bak file exception", e);
         }
         if (content != null && content.length() > 0) {
-            OffsetSerializeWrapper offsetSerializeWrapper;
+            OffsetSerializeWrapper offsetSerializeWrapper = null;
             try {
                 offsetSerializeWrapper =
                     OffsetSerializeWrapper.fromJson(content, OffsetSerializeWrapper.class);

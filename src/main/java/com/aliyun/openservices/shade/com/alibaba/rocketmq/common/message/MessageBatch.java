@@ -35,7 +35,6 @@ public class MessageBatch extends Message implements Iterable<Message> {
         return MessageDecoder.encodeMessages(messages);
     }
 
-    @Override
     public Iterator<Message> iterator() {
         return messages.iterator();
     }
@@ -43,7 +42,7 @@ public class MessageBatch extends Message implements Iterable<Message> {
     public static MessageBatch generateFromList(Collection<Message> messages) {
         assert messages != null;
         assert messages.size() > 0;
-        List<Message> messageList = new ArrayList<>(messages.size());
+        List<Message> messageList = new ArrayList<Message>(messages.size());
         Message first = null;
         for (Message message : messages) {
             if (message.getDelayTimeLevel() > 0) {

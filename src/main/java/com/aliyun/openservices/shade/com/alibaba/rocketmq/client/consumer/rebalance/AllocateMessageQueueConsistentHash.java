@@ -19,21 +19,19 @@ package com.aliyun.openservices.shade.com.alibaba.rocketmq.client.consumer.rebal
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
-
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.consumer.AllocateMessageQueueStrategy;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.log.ClientLogger;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.consistenthash.ConsistentHashRouter;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.consistenthash.HashFunction;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.consistenthash.Node;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageQueue;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Consistent Hashing queue algorithm
  */
 public class AllocateMessageQueueConsistentHash implements AllocateMessageQueueStrategy {
-    private final static Logger log = LoggerFactory.getLogger("AliyunONS-client");
+    private final InternalLogger log = ClientLogger.getLog();
 
     private final int virtualNodeCnt;
     private final HashFunction customHashFunction;
@@ -68,7 +66,7 @@ public class AllocateMessageQueueConsistentHash implements AllocateMessageQueueS
             throw new IllegalArgumentException("cidAll is null or cidAll empty");
         }
 
-        List<MessageQueue> result = new ArrayList<>();
+        List<MessageQueue> result = new ArrayList<MessageQueue>();
         if (!cidAll.contains(currentCID)) {
             log.info("[BUG] ConsumerGroup: {} The consumerId: {} not in cidAll: {}",
                 consumerGroup,
@@ -77,22 +75,25 @@ public class AllocateMessageQueueConsistentHash implements AllocateMessageQueueS
             return result;
         }
 
-        Collection<ClientNode> cidNodes = cidAll.stream().map(ClientNode::new).collect(Collectors.toList());
+        Collection<ClientNode> cidNodes = new ArrayList<ClientNode>();
+        for (String cid : cidAll) {
+            cidNodes.add(new ClientNode(cid));
+        }
 
         final ConsistentHashRouter<ClientNode> router; //for building hash ring
         if (customHashFunction != null) {
-            router = new ConsistentHashRouter<>(cidNodes, virtualNodeCnt, customHashFunction);
+            router = new ConsistentHashRouter<ClientNode>(cidNodes, virtualNodeCnt, customHashFunction);
         } else {
-            router = new ConsistentHashRouter<>(cidNodes, virtualNodeCnt);
+            router = new ConsistentHashRouter<ClientNode>(cidNodes, virtualNodeCnt);
         }
 
-        List<MessageQueue> results = new ArrayList<>();
-        mqAll.forEach(mq -> {
+        List<MessageQueue> results = new ArrayList<MessageQueue>();
+        for (MessageQueue mq : mqAll) {
             ClientNode clientNode = router.routeNode(mq.toString());
             if (clientNode != null && currentCID.equals(clientNode.getKey())) {
                 results.add(mq);
             }
-        });
+        }
 
         return results;
 
@@ -106,7 +107,7 @@ public class AllocateMessageQueueConsistentHash implements AllocateMessageQueueS
     private static class ClientNode implements Node {
         private final String clientID;
 
-        ClientNode(String clientID) {
+        public ClientNode(String clientID) {
             this.clientID = clientID;
         }
 

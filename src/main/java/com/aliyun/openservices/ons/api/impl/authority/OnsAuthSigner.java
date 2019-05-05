@@ -1,30 +1,30 @@
 package com.aliyun.openservices.ons.api.impl.authority;
 
-import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.constant.LoggerName;
-import com.aliyun.openservices.ons.api.impl.authority.exception.AuthenticationException;
-import org.apache.commons.codec.binary.Base64;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.nio.charset.Charset;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
+
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.constant.LoggerName;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLoggerFactory;
+
+import com.aliyun.openservices.ons.api.impl.authority.exception.AuthenticationException;
+import com.aliyun.openservices.shade.org.apache.commons.codec.binary.Base64;
 
 
 /**
- * @author manhong.yqd
- * @since 15/2/2.
+ * @author MQDevelopers
  */
 public class OnsAuthSigner {
-    private static final Charset defaultCharset = StandardCharsets.UTF_8;
-    public static final SigningAlgorithm defaultAlgorithm = SigningAlgorithm.HmacSHA1;
-    private static final Logger log = LoggerFactory.getLogger(LoggerName.ROCKETMQ_AUTHORIZE_LOGGER_NAME);
+    private static final InternalLogger LOGGER = InternalLoggerFactory.getLogger(LoggerName.ROCKETMQ_AUTHORIZE_LOGGER_NAME);
+    public static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
+    public static final SigningAlgorithm DEFAULT_ALGORITHM = SigningAlgorithm.HmacSHA1;
     private static final int CAL_SIGNATURE_FAILED = 10015;
     private static final String CAL_SIGNATURE_FAILED_MSG = "[%s:signature-failed] unable to calculate a request signature. error=%s";
 
     public static String calSignature(String data, String key) throws AuthenticationException {
-        return calSignature(data, key, defaultAlgorithm, defaultCharset);
+        return calSignature(data, key, DEFAULT_ALGORITHM, DEFAULT_CHARSET);
     }
 
     public static String calSignature(String data, String key, SigningAlgorithm algorithm, Charset charset) throws AuthenticationException {
@@ -35,10 +35,10 @@ public class OnsAuthSigner {
             throws AuthenticationException {
         try {
             byte[] signature = sign(data.getBytes(charset), key.getBytes(charset), algorithm);
-            return new String(Base64.encodeBase64(signature), defaultCharset);
+            return new String(Base64.encodeBase64(signature), DEFAULT_CHARSET);
         } catch (Exception e) {
             String message = String.format(CAL_SIGNATURE_FAILED_MSG, CAL_SIGNATURE_FAILED, e.getMessage());
-            log.error(message, e);
+            LOGGER.error(message, e);
             throw new AuthenticationException("CAL_SIGNATURE_FAILED", CAL_SIGNATURE_FAILED, message, e);
         }
     }
@@ -50,13 +50,13 @@ public class OnsAuthSigner {
             return mac.doFinal(data);
         } catch (Exception e) {
             String message = String.format(CAL_SIGNATURE_FAILED_MSG, CAL_SIGNATURE_FAILED, e.getMessage());
-            log.error(message, e);
+            LOGGER.error(message, e);
             throw new AuthenticationException("CAL_SIGNATURE_FAILED", CAL_SIGNATURE_FAILED, message, e);
         }
     }
 
     public static String calSignature(byte[] data, String key) throws AuthenticationException {
-        return calSignature(data, key, defaultAlgorithm, defaultCharset);
+        return calSignature(data, key, DEFAULT_ALGORITHM, DEFAULT_CHARSET);
     }
 
     public static String calSignature(byte[] data, String key, SigningAlgorithm algorithm, Charset charset) throws AuthenticationException {
@@ -67,10 +67,10 @@ public class OnsAuthSigner {
             throws AuthenticationException {
         try {
             byte[] signature = sign(data, key.getBytes(charset), algorithm);
-            return new String(Base64.encodeBase64(signature), defaultCharset);
+            return new String(Base64.encodeBase64(signature), DEFAULT_CHARSET);
         } catch (Exception e) {
             String message = String.format(CAL_SIGNATURE_FAILED_MSG, CAL_SIGNATURE_FAILED, e.getMessage());
-            log.error(message, e);
+            LOGGER.error(message, e);
             throw new AuthenticationException("CAL_SIGNATURE_FAILED", CAL_SIGNATURE_FAILED, message, e);
         }
     }

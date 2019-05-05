@@ -10,7 +10,7 @@ import static com.aliyun.openservices.ons.api.impl.authority.SessionCredentials.
 import static com.aliyun.openservices.ons.api.impl.authority.SessionCredentials.Signature;
 
 /**
- * @author lansheng.zj
+ * @author MQDevelopers
  */
 public class ClientRPCHook extends AbstractRPCHook {
     private SessionCredentials sessionCredentials;

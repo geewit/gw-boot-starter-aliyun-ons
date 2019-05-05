@@ -29,6 +29,7 @@ public class ViewBrokerStatsDataRequestHeader implements CommandCustomHeader {
 
     @Override
     public void checkFields() throws RemotingCommandException {
+
     }
 
     public String getStatsName() {

@@ -21,18 +21,16 @@
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.common.namesrv;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.MixAll;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.UtilAll;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.constant.LoggerName;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.help.FAQUrl;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLoggerFactory;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.utils.HttpTinyClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class TopAddressing {
-    private static final Logger log = LoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
+    private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
 
     private String nsAddr;
     private String wsAddr;
@@ -68,14 +66,11 @@ public class TopAddressing {
 
     public final String fetchNSAddr(boolean verbose, long timeoutMills) {
         String url = this.wsAddr;
-
         try {
-            log.info("this.unitName = " + this.unitName);
             if (!UtilAll.isBlank(this.unitName)) {
                 url = url + "-" + this.unitName + "?nofix=1";
             }
-            log.info("url = " + url);
-            HttpTinyClient.HttpResult result = HttpTinyClient.httpGet(url, null, null, StandardCharsets.UTF_8.name(), timeoutMills);
+            HttpTinyClient.HttpResult result = HttpTinyClient.httpGet(url, null, null, "UTF-8", timeoutMills);
             if (200 == result.code) {
                 String responseStr = result.content;
                 if (responseStr != null) {
@@ -84,7 +79,7 @@ public class TopAddressing {
                     log.error("fetch nameserver address is null");
                 }
             } else {
-                log.error("fetch nameserver address failed. statusCode={}", result.code);
+                log.error("fetch nameserver address failed. statusCode=" + result.code);
             }
         } catch (IOException e) {
             if (verbose) {

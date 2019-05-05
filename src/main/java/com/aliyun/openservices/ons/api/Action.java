@@ -11,5 +11,5 @@ public enum Action {
     /**
      * 消费失败，告知服务器稍后再投递这条消息，继续消费其他消息
      */
-    ReconsumeLater
+    ReconsumeLater,
 }

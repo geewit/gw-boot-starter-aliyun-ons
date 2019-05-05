@@ -38,13 +38,12 @@ import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.constant.LoggerName;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLoggerFactory;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.common.RemotingHelper;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class UtilAll {
-    private static final Logger log = LoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
+    private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
 
     public static final String YYYY_MM_DD_HH_MM_SS = "yyyy-MM-dd HH:mm:ss";
     public static final String YYYY_MM_DD_HH_MM_SS_SSS = "yyyy-MM-dd#HH:mm:ss:SSS";
@@ -191,9 +190,8 @@ public class UtilAll {
         try {
             File file = new File(path);
 
-            if (!file.exists()) {
+            if (!file.exists())
                 return -1;
-            }
 
             long totalSpace = file.getTotalSpace();
 
@@ -235,7 +233,7 @@ public class UtilAll {
     }
 
     public static byte[] string2bytes(String hexString) {
-        if (hexString == null || "".equals(hexString)) {
+        if (hexString == null || hexString.equals("")) {
             return null;
         }
         hexString = hexString.toUpperCase();
@@ -254,7 +252,7 @@ public class UtilAll {
     }
 
     public static byte[] uncompress(final byte[] src) throws IOException {
-        byte[] result;
+        byte[] result = src;
         byte[] uncompressData = new byte[src.length];
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(src);
         InflaterInputStream inflaterInputStream = new InflaterInputStream(byteArrayInputStream);
@@ -270,6 +268,8 @@ public class UtilAll {
             }
             byteArrayOutputStream.flush();
             result = byteArrayOutputStream.toByteArray();
+        } catch (IOException e) {
+            throw e;
         } finally {
             try {
                 byteArrayInputStream.close();
@@ -292,7 +292,7 @@ public class UtilAll {
     }
 
     public static byte[] compress(final byte[] src, final int level) throws IOException {
-        byte[] result;
+        byte[] result = src;
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(src.length);
         java.util.zip.Deflater defeater = new java.util.zip.Deflater(level);
         DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(byteArrayOutputStream, defeater);
@@ -380,7 +380,9 @@ public class UtilAll {
     public static String jstack(Map<Thread, StackTraceElement[]> map) {
         StringBuilder result = new StringBuilder();
         try {
-            map.entrySet().forEach(entry -> {
+            Iterator<Map.Entry<Thread, StackTraceElement[]>> ite = map.entrySet().iterator();
+            while (ite.hasNext()) {
+                Map.Entry<Thread, StackTraceElement[]> entry = ite.next();
                 StackTraceElement[] elements = entry.getValue();
                 Thread thread = entry.getKey();
                 if (elements != null && elements.length > 0) {
@@ -391,7 +393,7 @@ public class UtilAll {
                     }
                     result.append("\n");
                 }
-            });
+            }
         } catch (Throwable e) {
             result.append(RemotingHelper.exceptionSimpleDesc(e));
         }
@@ -408,11 +410,16 @@ public class UtilAll {
         //172.16.0.0~172.31.255.255
         //192.168.0.0~192.168.255.255
         if (ip[0] == (byte) 10) {
+
             return true;
         } else if (ip[0] == (byte) 172) {
-            return ip[1] >= (byte) 16 && ip[1] <= (byte) 31;
+            if (ip[1] >= (byte) 16 && ip[1] <= (byte) 31) {
+                return true;
+            }
         } else if (ip[0] == (byte) 192) {
-            return ip[1] == (byte) 168;
+            if (ip[1] == (byte) 168) {
+                return true;
+            }
         }
         return false;
     }
@@ -429,17 +436,26 @@ public class UtilAll {
             if (ip[1] == (byte) 1 && ip[2] == (byte) 1 && ip[3] == (byte) 1) {
                 return false;
             }
-            return ip[1] != (byte) 0 || ip[2] != (byte) 0 || ip[3] != (byte) 0;
+            if (ip[1] == (byte) 0 && ip[2] == (byte) 0 && ip[3] == (byte) 0) {
+                return false;
+            }
+            return true;
         } else if (ip[0] >= (byte) 128 && ip[0] <= (byte) 191) {
             if (ip[2] == (byte) 1 && ip[3] == (byte) 1) {
                 return false;
             }
-            return ip[2] != (byte) 0 || ip[3] != (byte) 0;
+            if (ip[2] == (byte) 0 && ip[3] == (byte) 0) {
+                return false;
+            }
+            return true;
         } else if (ip[0] >= (byte) 192 && ip[0] <= (byte) 223) {
             if (ip[3] == (byte) 1) {
                 return false;
             }
-            return ip[3] != (byte) 0;
+            if (ip[3] == (byte) 0) {
+                return false;
+            }
+            return true;
         }
         return false;
     }
@@ -448,15 +464,15 @@ public class UtilAll {
         if (ip.length != 4) {
             return null;
         }
-        return String.valueOf(ip[0] & 0xFF) + "." +
-                (ip[1] & 0xFF) + "." + (ip[2] & 0xFF) +
-                "." + (ip[3] & 0xFF);
+        return new StringBuilder().append(ip[0] & 0xFF).append(".").append(
+            ip[1] & 0xFF).append(".").append(ip[2] & 0xFF)
+            .append(".").append(ip[3] & 0xFF).toString();
     }
 
     public static byte[] getIP() {
         try {
             Enumeration allNetInterfaces = NetworkInterface.getNetworkInterfaces();
-            InetAddress ip;
+            InetAddress ip = null;
             byte[] internalIP = null;
             while (allNetInterfaces.hasMoreElements()) {
                 NetworkInterface netInterface = (NetworkInterface) allNetInterfaces.nextElement();
@@ -495,10 +511,8 @@ public class UtilAll {
             file.delete();
         } else if (file.isDirectory()) {
             File[] files = file.listFiles();
-            if (files != null) {
-                for (File file1 : files) {
-                    deleteFile(file1);
-                }
+            for (File file1 : files) {
+                deleteFile(file1);
             }
             file.delete();
         }

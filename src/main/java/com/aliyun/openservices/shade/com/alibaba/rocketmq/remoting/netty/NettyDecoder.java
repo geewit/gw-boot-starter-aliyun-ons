@@ -16,18 +16,18 @@
  */
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.netty;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import com.aliyun.openservices.shade.io.netty.buffer.ByteBuf;
+import com.aliyun.openservices.shade.io.netty.channel.ChannelHandlerContext;
+import com.aliyun.openservices.shade.io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import java.nio.ByteBuffer;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.common.RemotingHelper;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.common.RemotingUtil;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLoggerFactory;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.RemotingCommand;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class NettyDecoder extends LengthFieldBasedFrameDecoder {
-    private static final Logger log = LoggerFactory.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
+    private static final InternalLogger log = InternalLoggerFactory.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
 
     private static final int FRAME_MAX_LENGTH =
         Integer.parseInt(System.getProperty("com.rocketmq.remoting.frameMaxLength", "16777216"));
@@ -37,7 +37,7 @@ public class NettyDecoder extends LengthFieldBasedFrameDecoder {
     }
 
     @Override
-    public Object decode(ChannelHandlerContext ctx, ByteBuf in) {
+    public Object decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
         ByteBuf frame = null;
         try {
             frame = (ByteBuf) super.decode(ctx, in);

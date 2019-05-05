@@ -16,6 +16,7 @@
  */
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol;
 
+import com.aliyun.openservices.shade.com.alibaba.fastjson.annotation.JSONField;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -23,27 +24,26 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import com.alibaba.fastjson.annotation.JSONField;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.CommandCustomHeader;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.annotation.CFNotNull;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.common.RemotingHelper;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.exception.RemotingCommandException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLoggerFactory;
 
 public class RemotingCommand {
     public static final String SERIALIZE_TYPE_PROPERTY = "rocketmq.serialize.type";
     public static final String SERIALIZE_TYPE_ENV = "ROCKETMQ_SERIALIZE_TYPE";
     public static final String REMOTING_VERSION_KEY = "rocketmq.remoting.version";
-    private static final Logger log = LoggerFactory.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
+    private static final InternalLogger log = InternalLoggerFactory.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
     private static final int RPC_TYPE = 0; // 0, REQUEST_COMMAND
     private static final int RPC_ONEWAY = 1; // 0, RPC
-    private static final Map<Class<? extends CommandCustomHeader>, Field[]> CLASS_HASH_MAP = new HashMap<>();
-    private static final Map<Class, String> CANONICAL_NAME_CACHE = new HashMap<>();
+    private static final Map<Class<? extends CommandCustomHeader>, Field[]> CLASS_HASH_MAP =
+        new HashMap<Class<? extends CommandCustomHeader>, Field[]>();
+    private static final Map<Class, String> CANONICAL_NAME_CACHE = new HashMap<Class, String>();
     // 1, Oneway
     // 1, RESPONSE_COMMAND
-    private static final Map<Field, Boolean> NULLABLE_FIELD_CACHE = new HashMap<>();
+    private static final Map<Field, Boolean> NULLABLE_FIELD_CACHE = new HashMap<Field, Boolean>();
     private static final String STRING_CANONICAL_NAME = String.class.getCanonicalName();
     private static final String DOUBLE_CANONICAL_NAME_1 = Double.class.getCanonicalName();
     private static final String DOUBLE_CANONICAL_NAME_2 = double.class.getCanonicalName();
@@ -109,7 +109,7 @@ public class RemotingCommand {
     public static RemotingCommand createResponseCommand(Class<? extends CommandCustomHeader> classHeader) {
         return createResponseCommand(RemotingSysResponseCode.SYSTEM_ERROR, "not set any response code", classHeader);
     }
-
+    
     public static RemotingCommand createResponseCommand(int code, String remark,
         Class<? extends CommandCustomHeader> classHeader) {
         RemotingCommand cmd = new RemotingCommand();
@@ -120,8 +120,11 @@ public class RemotingCommand {
 
         if (classHeader != null) {
             try {
-                cmd.customHeader = classHeader.newInstance();
-            } catch (InstantiationException | IllegalAccessException e) {
+                CommandCustomHeader objectHeader = classHeader.newInstance();
+                cmd.customHeader = objectHeader;
+            } catch (InstantiationException e) {
+                return null;
+            } catch (IllegalAccessException e) {
                 return null;
             }
         }
@@ -185,7 +188,7 @@ public class RemotingCommand {
     }
 
     public static int createNewRequestId() {
-        return requestId.incrementAndGet();
+        return requestId.getAndIncrement();
     }
 
     public static SerializeType getSerializeTypeConfigInThisServer() {
@@ -233,7 +236,9 @@ public class RemotingCommand {
         CommandCustomHeader objectHeader;
         try {
             objectHeader = classHeader.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (InstantiationException e) {
+            return null;
+        } catch (IllegalAccessException e) {
             return null;
         }
 
@@ -367,7 +372,7 @@ public class RemotingCommand {
         if (this.customHeader != null) {
             Field[] fields = getClazzFields(customHeader.getClass());
             if (null == this.extFields) {
-                this.extFields = new HashMap<>();
+                this.extFields = new HashMap<String, String>();
             }
 
             for (Field field : fields) {
@@ -516,7 +521,7 @@ public class RemotingCommand {
 
     public void addExtField(String key, String value) {
         if (null == extFields) {
-            extFields = new HashMap<>();
+            extFields = new HashMap<String, String>();
         }
         extFields.put(key, value);
     }

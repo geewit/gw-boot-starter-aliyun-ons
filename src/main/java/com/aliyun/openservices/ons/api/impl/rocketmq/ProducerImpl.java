@@ -1,5 +1,8 @@
 package com.aliyun.openservices.ons.api.impl.rocketmq;
 
+import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+
 import com.alibaba.ons.open.trace.core.common.OnsTraceConstants;
 import com.alibaba.ons.open.trace.core.common.OnsTraceDispatcherType;
 import com.alibaba.ons.open.trace.core.dispatch.impl.AsyncArrayDispatcher;
@@ -9,8 +12,10 @@ import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.producer.Defaul
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.UtilAll;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageClientIDSetter;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.ResponseCode;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.exception.RemotingConnectException;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.exception.RemotingTimeoutException;
+
 import com.aliyun.openservices.ons.api.Message;
 import com.aliyun.openservices.ons.api.OnExceptionContext;
 import com.aliyun.openservices.ons.api.Producer;
@@ -19,21 +24,25 @@ import com.aliyun.openservices.ons.api.SendCallback;
 import com.aliyun.openservices.ons.api.SendResult;
 import com.aliyun.openservices.ons.api.exception.ONSClientException;
 import com.aliyun.openservices.ons.api.impl.tracehook.OnsClientSendMessageHookImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Properties;
-import java.util.concurrent.ExecutorService;
+import com.aliyun.openservices.ons.api.impl.util.ClientLoggerUtil;
+import com.aliyun.openservices.shade.org.apache.commons.lang3.StringUtils;
 
 public class ProducerImpl extends ONSClientAbstract implements Producer {
-    private final static Logger log = LoggerFactory.getLogger("AliyunONS-client");
+    private final static InternalLogger LOGGER = ClientLoggerUtil.getClientLogger();
     private final DefaultMQProducer defaultMQProducer;
 
     public ProducerImpl(final Properties properties) {
         super(properties);
-        this.defaultMQProducer = new DefaultMQProducer(new OnsClientRPCHook(sessionCredentials));
 
-        String producerGroup = properties.getProperty(PropertyKeyConst.ProducerId, "__ONS_PRODUCER_DEFAULT_GROUP");
+        String producerGroup = properties.getProperty(PropertyKeyConst.GROUP_ID, properties.getProperty(PropertyKeyConst.ProducerId));
+        if (StringUtils.isEmpty(producerGroup)) {
+            producerGroup = "__ONS_PRODUCER_DEFAULT_GROUP";
+        }
+
+        this.defaultMQProducer =
+            new DefaultMQProducer(this.getNamespace(), producerGroup, new OnsClientRPCHook(sessionCredentials));
+
+
         this.defaultMQProducer.setProducerGroup(producerGroup);
 
         boolean isVipChannelEnabled = Boolean.parseBoolean(properties.getProperty(PropertyKeyConst.isVipChannelEnabled, "false"));
@@ -45,14 +54,19 @@ public class ProducerImpl extends ONSClientAbstract implements Producer {
             this.defaultMQProducer.setSendMsgTimeout(5000);
         }
 
-        this.defaultMQProducer.setInstanceName(this.buildIntanceName());
+        if (properties.containsKey(PropertyKeyConst.EXACTLYONCE_DELIVERY)) {
+            this.defaultMQProducer.setAddExtendUniqInfo(Boolean.valueOf(properties.get(PropertyKeyConst.EXACTLYONCE_DELIVERY).toString()));
+        }
+
+        String instanceName = properties.getProperty(PropertyKeyConst.InstanceName, this.buildIntanceName());
+        this.defaultMQProducer.setInstanceName(instanceName);
         this.defaultMQProducer.setNamesrvAddr(this.getNameServerAddr());
         // 消息最大大小4M
         this.defaultMQProducer.setMaxMessageSize(1024 * 1024 * 4);
         // 为Producer增加消息轨迹回发模块
         String msgTraceSwitch = properties.getProperty(PropertyKeyConst.MsgTraceSwitch);
         if (!UtilAll.isBlank(msgTraceSwitch) && (!Boolean.parseBoolean(msgTraceSwitch))) {
-            log.info("MQ Client Disable the Trace Hook!");
+            LOGGER.info("MQ Client Disable the Trace Hook!");
         } else {
             try {
                 Properties tempProperties = new Properties();
@@ -64,13 +78,13 @@ public class ProducerImpl extends ONSClientAbstract implements Producer {
                 tempProperties.put(OnsTraceConstants.NAMESRV_ADDR, this.getNameServerAddr());
                 tempProperties.put(OnsTraceConstants.InstanceName, "PID_CLIENT_INNER_TRACE_PRODUCER");
                 tempProperties.put(OnsTraceConstants.TraceDispatcherType, OnsTraceDispatcherType.PRODUCER.name());
-                AsyncArrayDispatcher dispatcher = new AsyncArrayDispatcher(tempProperties);
+                AsyncArrayDispatcher dispatcher = new AsyncArrayDispatcher(tempProperties, sessionCredentials);
                 dispatcher.setHostProducer(defaultMQProducer.getDefaultMQProducerImpl());
                 traceDispatcher = dispatcher;
                 this.defaultMQProducer.getDefaultMQProducerImpl().registerSendMessageHook(
                     new OnsClientSendMessageHookImpl(traceDispatcher));
             } catch (Throwable e) {
-                log.error("system mqtrace hook init failed ,maybe can't send msg trace data");
+                LOGGER.error("system mqtrace hook init failed ,maybe can't send msg trace data.", e);
             }
         }
     }
@@ -114,7 +128,7 @@ public class ProducerImpl extends ONSClientAbstract implements Producer {
             sendResult.setMessageId(sendResultRMQ.getMsgId());
             return sendResult;
         } catch (Exception e) {
-            log.error(String.format("Send message Exception, %s", message), e);
+            LOGGER.error(String.format("Send message Exception, %s", message), e);
             throw checkProducerException(message.getTopic(), message.getMsgID(), e);
         }
     }
@@ -127,7 +141,7 @@ public class ProducerImpl extends ONSClientAbstract implements Producer {
             this.defaultMQProducer.sendOneway(msgRMQ);
             message.setMsgID(MessageClientIDSetter.getUniqID(msgRMQ));
         } catch (Exception e) {
-            log.error(String.format("Send message oneway Exception, %s", message), e);
+            LOGGER.error(String.format("Send message oneway Exception, %s", message), e);
             throw checkProducerException(message.getTopic(), message.getMsgID(), e);
         }
     }
@@ -140,7 +154,7 @@ public class ProducerImpl extends ONSClientAbstract implements Producer {
             this.defaultMQProducer.send(msgRMQ, sendCallbackConvert(message, sendCallback));
             message.setMsgID(MessageClientIDSetter.getUniqID(msgRMQ));
         } catch (Exception e) {
-            log.error(String.format("Send message async Exception, %s", message), e);
+            LOGGER.error(String.format("Send message async Exception, %s", message), e);
             throw checkProducerException(message.getTopic(), message.getMsgID(), e);
         }
     }
@@ -164,8 +178,8 @@ public class ProducerImpl extends ONSClientAbstract implements Producer {
 
             @Override
             public void onException(Throwable e) {
-                String topic = message.getTopic();
-                String msgId = message.getMsgID();
+                String topic = new String(message.getTopic());
+                String msgId = new String(message.getMsgID());
                 ONSClientException onsEx = checkProducerException(topic, msgId, e);
                 OnExceptionContext context = new OnExceptionContext();
                 context.setTopic(topic);

@@ -25,6 +25,8 @@ import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.annotation.CF
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.exception.RemotingCommandException;
 
 public class GetRouteInfoRequestHeader implements CommandCustomHeader {
+    public static char split = 1;
+
     @CFNotNull
     private String topic;
 

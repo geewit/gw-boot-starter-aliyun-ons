@@ -7,13 +7,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
-/**
- * Created by jixiang.jjx on 2015/1/27.
- */
 public class MsgConvertUtil {
 
-    public static final byte[] emptyBytes = new byte[0];
-    public static final String emptyString = "";
+    public static final byte[] EMPTY_BYTES = new byte[0];
+    public static final String EMPTY_STRING = "";
 
     public static final String JMS_MSGMODEL = "jmsMsgModel";
     /**
@@ -47,26 +44,28 @@ public class MsgConvertUtil {
         return (Serializable) ois.readObject();
     }
 
-    public static byte[] string2Bytes(String s, String charset) {
+    public static final byte[] string2Bytes(String s, String charset) {
         if (null == s) {
-            return emptyBytes;
+            return EMPTY_BYTES;
         }
         byte[] bs = null;
         try {
             bs = s.getBytes(charset);
-        } catch (Exception ignore) {
+        } catch (Exception e) {
+            // ignore
         }
         return bs;
     }
 
-    public static String bytes2String(byte[] bs, String charset) {
+    public static final String bytes2String(byte[] bs, String charset) {
         if (null == bs) {
-            return emptyString;
+            return EMPTY_STRING;
         }
         String s = null;
         try {
             s = new String(bs, charset);
-        } catch (Exception ignore) {
+        } catch (Exception e) {
+            // ignore
         }
         return s;
     }

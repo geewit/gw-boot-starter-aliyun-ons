@@ -16,8 +16,9 @@
  */
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.common;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFutureListener;
+import com.aliyun.openservices.shade.io.netty.channel.Channel;
+import com.aliyun.openservices.shade.io.netty.channel.ChannelFuture;
+import com.aliyun.openservices.shade.io.netty.channel.ChannelFutureListener;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.Inet6Address;
@@ -30,13 +31,14 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLoggerFactory;
 
 public class RemotingUtil {
     public static final String OS_NAME = System.getProperty("os.name");
 
-    private static final Logger log = LoggerFactory.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
+    private static final InternalLogger log = InternalLoggerFactory.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
     private static boolean isLinuxPlatform = false;
     private static boolean isWindowsPlatform = false;
 
@@ -93,8 +95,8 @@ public class RemotingUtil {
         try {
             // Traversal Network interface to get the first non-loopback and non-private address
             Enumeration<NetworkInterface> enumeration = NetworkInterface.getNetworkInterfaces();
-            ArrayList<String> ipv4Result = new ArrayList<>();
-            ArrayList<String> ipv6Result = new ArrayList<>();
+            ArrayList<String> ipv4Result = new ArrayList<String>();
+            ArrayList<String> ipv6Result = new ArrayList<String>();
             while (enumeration.hasMoreElements()) {
                 final NetworkInterface networkInterface = enumeration.nextElement();
                 final Enumeration<InetAddress> en = networkInterface.getInetAddresses();
@@ -188,8 +190,13 @@ public class RemotingUtil {
 
     public static void closeChannel(Channel channel) {
         final String addrRemote = RemotingHelper.parseChannelRemoteAddr(channel);
-        channel.close().addListener((ChannelFutureListener) future -> log.info("closeChannel: close the connection to remote address[{}] result: {}", addrRemote,
-            future.isSuccess()));
+        channel.close().addListener(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture future) throws Exception {
+                log.info("closeChannel: close the connection to remote address[{}] result: {}", addrRemote,
+                    future.isSuccess());
+            }
+        });
     }
 
 }

@@ -11,11 +11,13 @@ public interface OrderConsumer extends Admin {
     /**
      * 启动服务
      */
+    @Override
     void start();
 
     /**
      * 关闭服务
      */
+    @Override
     void shutdown();
 
     /**

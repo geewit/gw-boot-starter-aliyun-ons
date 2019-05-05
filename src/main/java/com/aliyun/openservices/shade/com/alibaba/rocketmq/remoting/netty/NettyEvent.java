@@ -16,7 +16,7 @@
  */
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.netty;
 
-import io.netty.channel.Channel;
+import com.aliyun.openservices.shade.io.netty.channel.Channel;
 
 public class NettyEvent {
     private final NettyEventType type;

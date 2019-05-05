@@ -22,21 +22,21 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReentrantLock;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.constant.LoggerName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLoggerFactory;
 
 /**
  * thread safe
  */
 public class ConcurrentTreeMap<K, V> {
-    private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
+    private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private final ReentrantLock lock;
     private TreeMap<K, V> tree;
     private RoundQueue<K> roundQueue;
 
     public ConcurrentTreeMap(int capacity, Comparator<? super K> comparator) {
-        tree = new TreeMap<>(comparator);
-        roundQueue = new RoundQueue<>(capacity);
+        tree = new TreeMap<K, V>(comparator);
+        roundQueue = new RoundQueue<K>(capacity);
         lock = new ReentrantLock(true);
     }
 
@@ -58,7 +58,7 @@ public class ConcurrentTreeMap<K, V> {
                     tree.put(key, value);
                     exsit = value;
                 }
-                log.warn("putIfAbsentAndRetExsit success. {}", key);
+                log.warn("putIfAbsentAndRetExsit success. " + key);
                 return exsit;
             } else {
                 V exsit = tree.get(key);

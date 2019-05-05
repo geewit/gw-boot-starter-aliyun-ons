@@ -17,8 +17,8 @@ public class MixUtils {
         try {
             // 遍历网卡，查找一个非回路ip地址并返回
             Enumeration<NetworkInterface> enumeration = NetworkInterface.getNetworkInterfaces();
-            ArrayList<String> ipv4Result = new ArrayList<>();
-            ArrayList<String> ipv6Result = new ArrayList<>();
+            ArrayList<String> ipv4Result = new ArrayList<String>();
+            ArrayList<String> ipv6Result = new ArrayList<String>();
             while (enumeration.hasMoreElements()) {
                 final NetworkInterface networkInterface = enumeration.nextElement();
                 final Enumeration<InetAddress> en = networkInterface.getInetAddresses();
@@ -56,8 +56,14 @@ public class MixUtils {
             final InetAddress localHost = InetAddress.getLocalHost();
             return normalizeHostAddress(localHost);
         }
-        catch (SocketException | UnknownHostException e) {
+        catch (SocketException e) {
             e.printStackTrace();
+        }
+        catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        finally {
+
         }
 
         return null;

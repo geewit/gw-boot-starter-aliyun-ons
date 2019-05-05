@@ -26,5 +26,6 @@ import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.exception.Rem
 public class UpdateConsumerOffsetResponseHeader implements CommandCustomHeader {
     @Override
     public void checkFields() throws RemotingCommandException {
+
     }
 }

@@ -24,24 +24,24 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.exception.MQClientException;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.log.ClientLogger;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.ThreadFactoryImpl;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageQueue;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.heartbeat.MessageModel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Schedule service for pull consumer
  */
 public class MQPullConsumerScheduleService {
-    private final static Logger log = LoggerFactory.getLogger("AliyunONS-client");
+    private final InternalLogger log = ClientLogger.getLog();
     private final MessageQueueListener messageQueueListener = new MessageQueueListenerImpl();
     private final ConcurrentMap<MessageQueue, PullTaskImpl> taskTable =
-        new ConcurrentHashMap<>();
+        new ConcurrentHashMap<MessageQueue, PullTaskImpl>();
     private DefaultMQPullConsumer defaultMQPullConsumer;
     private int pullThreadNums = 20;
     private ConcurrentMap<String /* topic */, PullTaskCallback> callbackTable =
-        new ConcurrentHashMap<>();
+        new ConcurrentHashMap<String, PullTaskCallback>();
     private ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
 
     public MQPullConsumerScheduleService(final String consumerGroup) {

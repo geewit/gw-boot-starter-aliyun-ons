@@ -16,33 +16,35 @@
  */
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.netty;
 
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelDuplexHandler;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.epoll.Epoll;
-import io.netty.channel.epoll.EpollEventLoopGroup;
-import io.netty.channel.epoll.EpollServerSocketChannel;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.timeout.IdleState;
-import io.netty.handler.timeout.IdleStateEvent;
-import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.concurrent.DefaultEventExecutorGroup;
+import com.aliyun.openservices.shade.io.netty.bootstrap.ServerBootstrap;
+import com.aliyun.openservices.shade.io.netty.buffer.ByteBuf;
+import com.aliyun.openservices.shade.io.netty.buffer.PooledByteBufAllocator;
+import com.aliyun.openservices.shade.io.netty.channel.Channel;
+import com.aliyun.openservices.shade.io.netty.channel.ChannelDuplexHandler;
+import com.aliyun.openservices.shade.io.netty.channel.ChannelFuture;
+import com.aliyun.openservices.shade.io.netty.channel.ChannelHandlerContext;
+import com.aliyun.openservices.shade.io.netty.channel.ChannelInitializer;
+import com.aliyun.openservices.shade.io.netty.channel.ChannelOption;
+import com.aliyun.openservices.shade.io.netty.channel.EventLoopGroup;
+import com.aliyun.openservices.shade.io.netty.channel.SimpleChannelInboundHandler;
+import com.aliyun.openservices.shade.io.netty.channel.epoll.Epoll;
+import com.aliyun.openservices.shade.io.netty.channel.epoll.EpollEventLoopGroup;
+import com.aliyun.openservices.shade.io.netty.channel.epoll.EpollServerSocketChannel;
+import com.aliyun.openservices.shade.io.netty.channel.nio.NioEventLoopGroup;
+import com.aliyun.openservices.shade.io.netty.channel.socket.SocketChannel;
+import com.aliyun.openservices.shade.io.netty.channel.socket.nio.NioServerSocketChannel;
+import com.aliyun.openservices.shade.io.netty.handler.timeout.IdleState;
+import com.aliyun.openservices.shade.io.netty.handler.timeout.IdleStateEvent;
+import com.aliyun.openservices.shade.io.netty.handler.timeout.IdleStateHandler;
+import com.aliyun.openservices.shade.io.netty.util.concurrent.DefaultEventExecutorGroup;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.cert.CertificateException;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -51,19 +53,19 @@ import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.ChannelEventL
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.InvokeCallback;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.RPCHook;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.RemotingServer;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.common.Pair;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.common.RemotingHelper;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.common.RemotingUtil;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.common.TlsMode;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.exception.RemotingSendRequestException;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.exception.RemotingTimeoutException;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.exception.RemotingTooMuchRequestException;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLoggerFactory;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.RemotingCommand;
-import org.apache.commons.lang3.tuple.Pair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class NettyRemotingServer extends NettyRemotingAbstract implements RemotingServer {
-    private static final Logger log = LoggerFactory.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
+    private static final InternalLogger log = InternalLoggerFactory.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
     private final ServerBootstrap serverBootstrap;
     private final EventLoopGroup eventLoopGroupSelector;
     private final EventLoopGroup eventLoopGroupBoss;
@@ -75,7 +77,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     private final Timer timer = new Timer("ServerHouseKeepingService", true);
     private DefaultEventExecutorGroup defaultEventExecutorGroup;
 
-    private RPCHook rpcHook;
+    private List<RPCHook> rpcHookList = new CopyOnWriteArrayList<RPCHook>();
 
     private int port = 0;
 
@@ -150,7 +152,9 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             try {
                 sslContext = TlsHelper.buildSslContext(false);
                 log.info("SSLContext created for server");
-            } catch (CertificateException | IOException e) {
+            } catch (CertificateException e) {
+                log.error("Failed to create SSLContext for server", e);
+            } catch (IOException e) {
                 log.error("Failed to create SSLContext for server", e);
             }
         }
@@ -185,10 +189,12 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
                 .childOption(ChannelOption.TCP_NODELAY, true)
                 .childOption(ChannelOption.SO_SNDBUF, nettyServerConfig.getServerSocketSndBufSize())
                 .childOption(ChannelOption.SO_RCVBUF, nettyServerConfig.getServerSocketRcvBufSize())
+                .childOption(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, nettyServerConfig.getWriteBufferHighWaterMark())
+                .childOption(ChannelOption.WRITE_BUFFER_LOW_WATER_MARK, nettyServerConfig.getWriteBufferLowWaterMark())
                 .localAddress(new InetSocketAddress(this.nettyServerConfig.getListenPort()))
                 .childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
-                    public void initChannel(SocketChannel ch) {
+                    public void initChannel(SocketChannel ch) throws Exception {
                         ch.pipeline()
                             .addLast(defaultEventExecutorGroup, HANDSHAKE_HANDLER_NAME,
                                 new HandshakeHandler(TlsSystemConfig.tlsMode))
@@ -219,6 +225,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         }
 
         this.timer.scheduleAtFixedRate(new TimerTask() {
+
             @Override
             public void run() {
                 try {
@@ -263,7 +270,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 
     @Override
     public void registerRPCHook(RPCHook rpcHook) {
-        this.rpcHook = rpcHook;
+        this.rpcHookList.add(rpcHook);
     }
 
     @Override
@@ -273,13 +280,13 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             executorThis = this.publicExecutor;
         }
 
-        Pair<NettyRequestProcessor, ExecutorService> pair = Pair.of(processor, executorThis);
+        Pair<NettyRequestProcessor, ExecutorService> pair = new Pair<NettyRequestProcessor, ExecutorService>(processor, executorThis);
         this.processorTable.put(requestCode, pair);
     }
 
     @Override
     public void registerDefaultProcessor(NettyRequestProcessor processor, ExecutorService executor) {
-        this.defaultRequestProcessor = Pair.of(processor, executor);
+        this.defaultRequestProcessor = new Pair<NettyRequestProcessor, ExecutorService>(processor, executor);
     }
 
     @Override
@@ -316,8 +323,8 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     }
 
     @Override
-    public RPCHook getRPCHook() {
-        return this.rpcHook;
+    public List<RPCHook> getRPCHook() {
+        return rpcHookList;
     }
 
     @Override
@@ -336,7 +343,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         }
 
         @Override
-        protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) {
+        protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
 
             // mark the current position so that we can peek the first byte to determine if the content is starting with
             // TLS handshake
@@ -390,7 +397,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     class NettyServerHandler extends SimpleChannelInboundHandler<RemotingCommand> {
 
         @Override
-        protected void channelRead0(ChannelHandlerContext ctx, RemotingCommand msg) {
+        protected void channelRead0(ChannelHandlerContext ctx, RemotingCommand msg) throws Exception {
             processMessageReceived(ctx, msg);
         }
     }
@@ -433,7 +440,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         }
 
         @Override
-        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
+        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
             if (evt instanceof IdleStateEvent) {
                 IdleStateEvent event = (IdleStateEvent) evt;
                 if (event.state().equals(IdleState.ALL_IDLE)) {
@@ -451,7 +458,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         }
 
         @Override
-        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
             final String remoteAddress = RemotingHelper.parseChannelRemoteAddr(ctx.channel());
             log.warn("NETTY SERVER PIPELINE: exceptionCaught {}", remoteAddress);
             log.warn("NETTY SERVER PIPELINE: exceptionCaught exception.", cause);

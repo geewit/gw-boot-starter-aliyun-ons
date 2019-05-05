@@ -1,58 +1,73 @@
 package com.aliyun.openservices.ons.api.impl.rocketmq;
 
+import java.util.Properties;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.annotation.Generated;
+
 import com.alibaba.ons.open.trace.core.dispatch.AsyncDispatcher;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.exception.MQClientException;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.impl.producer.DefaultMQProducerImpl;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.UtilAll;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.namesrv.TopAddressing;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
+
 import com.aliyun.openservices.ons.api.Admin;
 import com.aliyun.openservices.ons.api.PropertyKeyConst;
 import com.aliyun.openservices.ons.api.exception.ONSClientException;
 import com.aliyun.openservices.ons.api.impl.authority.SessionCredentials;
-
-import java.util.Properties;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.aliyun.openservices.ons.api.impl.util.ClientLoggerUtil;
+import com.aliyun.openservices.ons.api.impl.util.NameAddrUtils;
+import com.aliyun.openservices.shade.org.apache.commons.lang3.StringUtils;
 
 import static com.aliyun.openservices.shade.com.alibaba.rocketmq.common.UtilAll.getPid;
 
+@Generated("ons-client")
 public abstract class ONSClientAbstract implements Admin {
-    // 内网地址服务器
+    /**
+     * 内网地址服务器
+     */
     protected static final String WSADDR_INTERNAL = System.getProperty("com.aliyun.openservices.ons.addr.internal",
         "http://onsaddr-internal.aliyun.com:8080/rocketmq/nsaddr4client-internal");
-    // 公网地址服务器
+    /**
+     * 公网地址服务器
+     */
     protected static final String WSADDR_INTERNET = System.getProperty("com.aliyun.openservices.ons.addr.internet",
         "http://onsaddr-internet.aliyun.com/rocketmq/nsaddr4client-internet");
     protected static final long WSADDR_INTERNAL_TIMEOUTMILLS =
         Long.parseLong(System.getProperty("com.aliyun.openservices.ons.addr.internal.timeoutmills", "3000"));
     protected static final long WSADDR_INTERNET_TIMEOUTMILLS =
             Long.parseLong(System.getProperty("com.aliyun.openservices.ons.addr.internet.timeoutmills", "5000"));
-    private final static Logger log = LoggerFactory.getLogger("AliyunONS-client");
+    private final static InternalLogger LOGGER = ClientLoggerUtil.getClientLogger();
     protected final Properties properties;
     protected final SessionCredentials sessionCredentials = new SessionCredentials();
-    protected String nameServerAddr;
+    protected String nameServerAddr = NameAddrUtils.getNameAdd();
 
     protected AsyncDispatcher traceDispatcher = null;
 
     protected final AtomicBoolean started = new AtomicBoolean(false);
 
-    private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "ONSClient-UpdateNameServerThread"));
+    private final ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(1,
+        new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(r, "ONSClient-UpdateNameServerThread");
+            }
+        });
 
     public ONSClientAbstract(Properties properties) {
         this.properties = properties;
         this.sessionCredentials.updateContent(properties);
         // 检测必须的参数
-        if (StringUtils.isEmpty(this.sessionCredentials.getAccessKey())) {
+        if (null == this.sessionCredentials.getAccessKey() || "".equals(this.sessionCredentials.getAccessKey())) {
             throw new ONSClientException("please set access key");
         }
 
-        if (StringUtils.isEmpty(this.sessionCredentials.getSecretKey())) {
+        if (null == this.sessionCredentials.getSecretKey() || "".equals(this.sessionCredentials.getSecretKey())) {
             throw new ONSClientException("please set secret key");
         }
 
@@ -62,14 +77,18 @@ public abstract class ONSClientAbstract implements Admin {
 
         // 用户指定了Name Server
         // 私有云模式有可能需要
-        this.nameServerAddr = this.properties.getProperty(PropertyKeyConst.NAMESRV_ADDR);
-        if (nameServerAddr == null) {
-            this.nameServerAddr = fetchNameServerAddr();
-            if (null == nameServerAddr) {
-                throw new ONSClientException(FAQ.errorMessage("Can not find name server, May be your network problem.", FAQ.FIND_NS_FAILED));
-            }
+        this.nameServerAddr = getNameSrvAddrFromProperties();
+        if (nameServerAddr != null) {
+            return;
+        }
+        this.nameServerAddr = fetchNameServerAddr();
+        if (null == nameServerAddr) {
+            throw new ONSClientException(FAQ.errorMessage("Can not find name server, May be your network problem.", FAQ.FIND_NS_FAILED));
+        }
 
-            this.scheduledExecutorService.scheduleAtFixedRate(() -> {
+        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
                 try {
                     String nsAddrs = fetchNameServerAddr();
                     if (nsAddrs != null && !ONSClientAbstract.this.nameServerAddr.equals(nsAddrs)) {
@@ -79,13 +98,23 @@ public abstract class ONSClientAbstract implements Admin {
                         }
                     }
                 } catch (Exception e) {
-                    log.error("update name server periodically failed.", e);
+                    LOGGER.error("update name server periodically failed.", e);
                 }
-            }, 10 * 1000L, 30 * 1000L, TimeUnit.MILLISECONDS);
-        }
+            }
+        }, 10 * 1000L, 30 * 1000L, TimeUnit.MILLISECONDS);
+
     }
 
     protected abstract void updateNameServerAddr(String newAddrs);
+
+    private String getNameSrvAddrFromProperties() {
+        String nameserverAddrs = this.properties.getProperty(PropertyKeyConst.NAMESRV_ADDR);
+        if (StringUtils.isNotEmpty(nameserverAddrs) && NameAddrUtils.NAMESRV_ENDPOINT_PATTERN.matcher(nameserverAddrs.trim()).matches()) {
+            return nameserverAddrs.substring(NameAddrUtils.ENDPOINT_PREFIX.length());
+        }
+
+        return nameserverAddrs;
+    }
 
     private String fetchNameServerAddr() {
         String nsAddrs;
@@ -93,11 +122,10 @@ public abstract class ONSClientAbstract implements Admin {
         // 用户指定了地址服务器
         {
             String property = this.properties.getProperty(PropertyKeyConst.ONSAddr);
-            log.info("onsAddr = " + property);
             if (property != null) {
                 nsAddrs = new TopAddressing(property).fetchNSAddr();
                 if (nsAddrs != null) {
-                    log.info("connected to user-defined ons addr server, {} success, {}", property, nsAddrs);
+                    LOGGER.info("connected to user-defined ons addr server, {} success, {}", property, nsAddrs);
                     return nsAddrs;
                 } else {
                     throw new ONSClientException(FAQ.errorMessage("Can not find name server with onsAddr " + property, FAQ.FIND_NS_FAILED));
@@ -110,7 +138,7 @@ public abstract class ONSClientAbstract implements Admin {
             TopAddressing top = new TopAddressing(WSADDR_INTERNAL);
             nsAddrs = top.fetchNSAddr(false, WSADDR_INTERNAL_TIMEOUTMILLS);
             if (nsAddrs != null) {
-                log.info("connected to internal server, {} success, {}", WSADDR_INTERNAL, nsAddrs);
+                LOGGER.info("connected to internal server, {} success, {}", WSADDR_INTERNAL, nsAddrs);
                 return nsAddrs;
             }
         }
@@ -120,7 +148,7 @@ public abstract class ONSClientAbstract implements Admin {
             TopAddressing top = new TopAddressing(WSADDR_INTERNET);
             nsAddrs = top.fetchNSAddr(false, WSADDR_INTERNET_TIMEOUTMILLS);
             if (nsAddrs != null) {
-                log.info("connected to internet server, {} success, {}", WSADDR_INTERNET, nsAddrs);
+                LOGGER.info("connected to internet server, {} success, {}", WSADDR_INTERNET, nsAddrs);
             }
         }
 
@@ -132,10 +160,36 @@ public abstract class ONSClientAbstract implements Admin {
     }
 
     protected String buildIntanceName() {
-        return Integer.toString(UtilAll.getPid())//
-            + "#" + this.nameServerAddr.hashCode()//
+        return Integer.toString(UtilAll.getPid())
+            + "#" + this.nameServerAddr.hashCode()
             + "#" + this.sessionCredentials.getAccessKey().hashCode()
             + "#" + System.nanoTime();
+    }
+
+    protected String getNamespace() {
+        String namespace = null;
+
+        // 用户指定了Endpoint(Namesrv地址的泛域名)
+        {
+            String nameserverAddr = this.properties.getProperty(PropertyKeyConst.NAMESRV_ADDR);
+            if (StringUtils.isNotEmpty(nameserverAddr)) {
+                if (NameAddrUtils.validateInstanceEndpoint(nameserverAddr)) {
+                    namespace = NameAddrUtils.parseInstanceIdFromEndpoint(nameserverAddr);
+                    LOGGER.info("User specify namespace by endpoint: {}.", namespace);
+                }
+            }
+        }
+
+        // 用户通过Properties透传的namespace，如果同时指定，Properties中的配置优先级更高
+        {
+            String namespaceFromProperty = this.properties.getProperty(PropertyKeyConst.INSTANCE_ID, null);
+            if (StringUtils.isNotEmpty(namespaceFromProperty)) {
+                namespace = namespaceFromProperty;
+                LOGGER.info("User specify namespace by property: {}.", namespace);
+            }
+        }
+
+        return namespace;
     }
 
     protected void checkONSProducerServiceState(DefaultMQProducerImpl producer) {
@@ -163,9 +217,23 @@ public abstract class ONSClientAbstract implements Admin {
             try {
                 traceDispatcher.start();
             } catch (MQClientException e) {
-                log.warn("trace dispatcher start failed ", e);
+                LOGGER.warn("trace dispatcher start failed ", e);
             }
         }
+    }
+
+    @Override
+    public void updateCredential(Properties credentialProperties) {
+        if (null == credentialProperties.getProperty(SessionCredentials.AccessKey)
+                || "".equals(credentialProperties.getProperty(SessionCredentials.AccessKey))) {
+            throw new ONSClientException("update credential failed. please set access key.");
+        }
+
+        if (null == credentialProperties.getProperty(SessionCredentials.SecretKey)
+                || "".equals(credentialProperties.getProperty(SessionCredentials.SecretKey))) {
+            throw new ONSClientException("update credential failed. please set secret key");
+        }
+        this.sessionCredentials.updateContent(credentialProperties);
     }
 
     @Override

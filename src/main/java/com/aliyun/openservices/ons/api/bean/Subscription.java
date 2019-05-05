@@ -58,10 +58,13 @@ public class Subscription {
         }
         Subscription other = (Subscription) obj;
         if (topic == null) {
-            return other.topic == null;
-        } else {
-            return topic.equals(other.topic);
+            if (other.topic != null) {
+                return false;
+            }
+        } else if (!topic.equals(other.topic)) {
+            return false;
         }
+        return true;
     }
 
     @Override

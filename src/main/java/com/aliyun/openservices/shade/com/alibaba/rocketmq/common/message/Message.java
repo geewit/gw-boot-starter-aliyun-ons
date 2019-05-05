@@ -19,7 +19,6 @@ package com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 public class Message implements Serializable {
@@ -42,13 +41,11 @@ public class Message implements Serializable {
         this.flag = flag;
         this.body = body;
 
-        if (tags != null && tags.length() > 0) {
+        if (tags != null && tags.length() > 0)
             this.setTags(tags);
-        }
 
-        if (keys != null && keys.length() > 0) {
+        if (keys != null && keys.length() > 0)
             this.setKeys(keys);
-        }
 
         this.setWaitStoreMsgOK(waitStoreMsgOK);
     }
@@ -67,7 +64,7 @@ public class Message implements Serializable {
 
     void putProperty(final String name, final String value) {
         if (null == this.properties) {
-            this.properties = new HashMap<>();
+            this.properties = new HashMap<String, String>();
         }
 
         this.properties.put(name, value);
@@ -101,7 +98,7 @@ public class Message implements Serializable {
 
     public String getProperty(final String name) {
         if (null == this.properties) {
-            this.properties = new HashMap<>();
+            this.properties = new HashMap<String, String>();
         }
 
         return this.properties.get(name);
@@ -128,16 +125,13 @@ public class Message implements Serializable {
     }
 
     public void setKeys(Collection<String> keys) {
-        StringBuilder sb = new StringBuilder();
-        Iterator<String> iterator = keys.iterator();
-        while (iterator.hasNext()) {
-            sb.append(iterator.next());
-            if(iterator.hasNext()) {
-                sb.append(MessageConst.KEY_SEPARATOR);
-            }
+        StringBuffer sb = new StringBuffer();
+        for (String k : keys) {
+            sb.append(k);
+            sb.append(MessageConst.KEY_SEPARATOR);
         }
 
-        this.setKeys(sb.toString());
+        this.setKeys(sb.toString().trim());
     }
 
     public int getDelayTimeLevel() {
@@ -155,7 +149,14 @@ public class Message implements Serializable {
 
     public boolean isWaitStoreMsgOK() {
         String result = this.getProperty(MessageConst.PROPERTY_WAIT_STORE_MSG_OK);
-        return null == result || Boolean.parseBoolean(result);
+        if (null == result)
+            return true;
+
+        return Boolean.parseBoolean(result);
+    }
+
+    public void setInstanceId(String instanceId) {
+        this.putProperty(MessageConst.PROPERTY_INSTANCE_ID, instanceId);
     }
 
     public void setWaitStoreMsgOK(boolean waitStoreMsgOK) {

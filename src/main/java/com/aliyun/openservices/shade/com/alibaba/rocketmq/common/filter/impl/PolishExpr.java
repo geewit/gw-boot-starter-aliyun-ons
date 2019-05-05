@@ -32,28 +32,31 @@ public class PolishExpr {
     }
 
     /**
-     * Shunting-yard algorithm
+     * Shunting-yard algorithm <br/>
      * http://en.wikipedia.org/wiki/Shunting_yard_algorithm
      *
      * @return the compute result of Shunting-yard algorithm
      */
     public static List<Op> reversePolish(List<Op> tokens) {
-        List<Op> segments = new ArrayList<>();
-        Stack<Operator> operatorStack = new Stack<>();
+        List<Op> segments = new ArrayList<Op>();
+        Stack<Operator> operatorStack = new Stack<Operator>();
 
-        for (Op token : tokens) {
+        for (int i = 0; i < tokens.size(); i++) {
+            Op token = tokens.get(i);
             if (isOperand(token)) {
+
                 segments.add(token);
             } else if (isLeftParenthesis(token)) {
+
                 operatorStack.push((Operator) token);
             } else if (isRightParenthesis(token)) {
+
                 Operator opNew = null;
                 while (!operatorStack.empty() && LEFTPARENTHESIS != (opNew = operatorStack.pop())) {
                     segments.add(opNew);
                 }
-                if (null == opNew || LEFTPARENTHESIS != opNew) {
+                if (null == opNew || LEFTPARENTHESIS != opNew)
                     throw new IllegalArgumentException("mismatched parentheses");
-                }
             } else if (isOperator(token)) {
 
                 Operator opNew = (Operator) token;
@@ -64,16 +67,14 @@ public class PolishExpr {
                     }
                 }
                 operatorStack.push(opNew);
-            } else {
+            } else
                 throw new IllegalArgumentException("illegal token " + token);
-            }
         }
 
         while (!operatorStack.empty()) {
             Operator operator = operatorStack.pop();
-            if (LEFTPARENTHESIS == operator || RIGHTPARENTHESIS == operator) {
+            if (LEFTPARENTHESIS == operator || RIGHTPARENTHESIS == operator)
                 throw new IllegalArgumentException("mismatched parentheses " + operator);
-            }
             segments.add(operator);
         }
 
@@ -86,7 +87,7 @@ public class PolishExpr {
      * @throws Exception
      */
     private static List<Op> participle(String expression) {
-        List<Op> segments = new ArrayList<>();
+        List<Op> segments = new ArrayList<Op>();
 
         int size = expression.length();
         int wordStartIndex = -1;
@@ -168,11 +169,11 @@ public class PolishExpr {
     }
 
     public static boolean isLeftParenthesis(Op token) {
-        return token instanceof Operator && LEFTPARENTHESIS == token;
+        return token instanceof Operator && LEFTPARENTHESIS == (Operator) token;
     }
 
     public static boolean isRightParenthesis(Op token) {
-        return token instanceof Operator && RIGHTPARENTHESIS == token;
+        return token instanceof Operator && RIGHTPARENTHESIS == (Operator) token;
     }
 
     public static boolean isOperator(Op token) {

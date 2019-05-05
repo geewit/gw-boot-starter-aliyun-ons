@@ -17,6 +17,7 @@
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.client.impl;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -31,6 +32,7 @@ import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.exception.MQBro
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.exception.MQClientException;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.impl.factory.MQClientInstance;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.impl.producer.TopicPublishInfo;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.log.ClientLogger;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.MixAll;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.TopicConfig;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.help.FAQUrl;
@@ -40,20 +42,23 @@ import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.Message
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageExt;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageId;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageQueue;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.NamespaceUtil;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.ResponseCode;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.header.QueryMessageRequestHeader;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.header.QueryMessageResponseHeader;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.route.BrokerData;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.route.TopicRouteData;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.InvokeCallback;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.common.RemotingUtil;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.exception.RemotingCommandException;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.exception.RemotingException;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.netty.ResponseFuture;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.RemotingCommand;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class MQAdminImpl {
-    private final static Logger log = LoggerFactory.getLogger("AliyunONS-client");
+
+    private final InternalLogger log = ClientLogger.getLog();
     private final MQClientInstance mQClientFactory;
     private long timeoutMillis = 6000;
 
@@ -133,7 +138,7 @@ public class MQAdminImpl {
             if (topicRouteData != null) {
                 TopicPublishInfo topicPublishInfo = MQClientInstance.topicRouteData2TopicPublishInfo(topic, topicRouteData);
                 if (topicPublishInfo != null && topicPublishInfo.ok()) {
-                    return topicPublishInfo.getMessageQueueList();
+                    return parsePublishMessageQueues(topicPublishInfo.getMessageQueueList());
                 }
             }
         } catch (Exception e) {
@@ -141,6 +146,16 @@ public class MQAdminImpl {
         }
 
         throw new MQClientException("Unknow why, Can not find Message Queue for this topic, " + topic, null);
+    }
+
+    public List<MessageQueue> parsePublishMessageQueues(List<MessageQueue> messageQueueList) {
+        List<MessageQueue> resultQueues = new ArrayList<MessageQueue>();
+        for (MessageQueue queue : messageQueueList) {
+            String userTopic = NamespaceUtil.withoutNamespace(queue.getTopic(), this.mQClientFactory.getClientConfig().getNamespace());
+            resultQueues.add(new MessageQueue(userTopic, queue.getBrokerName(), queue.getQueueId()));
+        }
+
+        return resultQueues;
     }
 
     public Set<MessageQueue> fetchSubscribeMessageQueues(String topic) throws MQClientException {
@@ -237,17 +252,16 @@ public class MQAdminImpl {
         throw new MQClientException("The broker[" + mq.getBrokerName() + "] not exist", null);
     }
 
-    public MessageExt viewMessage(
-        String msgId) throws RemotingException, MQBrokerException, InterruptedException, MQClientException {
-
-        MessageId messageId;
+    public MessageExt viewMessage(String msgId)
+        throws RemotingException, MQBrokerException, InterruptedException, MQClientException {
+        MessageId messageId = null;
         try {
             messageId = MessageDecoder.decodeMessageId(msgId);
         } catch (Exception e) {
             throw new MQClientException(ResponseCode.NO_MESSAGE, "query message by id finished, but no message.");
         }
-        return this.mQClientFactory.getMQClientAPIImpl().viewMessage(RemotingUtil.socketAddress2String(messageId.getAddress()),
-            messageId.getOffset(), timeoutMillis);
+        return this.mQClientFactory.getMQClientAPIImpl().viewMessage(
+            RemotingUtil.socketAddress2String(messageId.getAddress()), messageId.getOffset(), timeoutMillis);
     }
 
     public QueryResult queryMessage(String topic, String key, int maxNum, long begin,
@@ -284,7 +298,7 @@ public class MQAdminImpl {
         }
 
         if (topicRouteData != null) {
-            List<String> brokerAddrs = new LinkedList<>();
+            List<String> brokerAddrs = new LinkedList<String>();
             for (BrokerData brokerData : topicRouteData.getBrokerDatas()) {
                 String addr = brokerData.selectBrokerAddr();
                 if (addr != null) {
@@ -294,10 +308,10 @@ public class MQAdminImpl {
 
             if (!brokerAddrs.isEmpty()) {
                 final CountDownLatch countDownLatch = new CountDownLatch(brokerAddrs.size());
-                final List<QueryResult> queryResultList = new LinkedList<>();
+                final List<QueryResult> queryResultList = new LinkedList<QueryResult>();
                 final ReadWriteLock lock = new ReentrantReadWriteLock(false);
 
-                brokerAddrs.forEach(addr -> {
+                for (String addr : brokerAddrs) {
                     try {
                         QueryMessageRequestHeader requestHeader = new QueryMessageRequestHeader();
                         requestHeader.setTopic(topic);
@@ -307,24 +321,26 @@ public class MQAdminImpl {
                         requestHeader.setEndTimestamp(end);
 
                         this.mQClientFactory.getMQClientAPIImpl().queryMessage(addr, requestHeader, timeoutMillis * 3,
-                                responseFuture -> {
+                            new InvokeCallback() {
+                                @Override
+                                public void operationComplete(ResponseFuture responseFuture) {
                                     try {
                                         RemotingCommand response = responseFuture.getResponseCommand();
                                         if (response != null) {
                                             switch (response.getCode()) {
                                                 case ResponseCode.SUCCESS: {
-                                                    QueryMessageResponseHeader responseHeader;
+                                                    QueryMessageResponseHeader responseHeader = null;
                                                     try {
                                                         responseHeader =
-                                                                (QueryMessageResponseHeader) response
-                                                                        .decodeCommandCustomHeader(QueryMessageResponseHeader.class);
+                                                            (QueryMessageResponseHeader) response
+                                                                .decodeCommandCustomHeader(QueryMessageResponseHeader.class);
                                                     } catch (RemotingCommandException e) {
                                                         log.error("decodeCommandCustomHeader exception", e);
                                                         return;
                                                     }
 
                                                     List<MessageExt> wrappers =
-                                                            MessageDecoder.decodes(ByteBuffer.wrap(response.getBody()), true);
+                                                        MessageDecoder.decodes(ByteBuffer.wrap(response.getBody()), true);
 
                                                     QueryResult qr = new QueryResult(responseHeader.getIndexLastUpdateTimestamp(), wrappers);
                                                     try {
@@ -345,11 +361,13 @@ public class MQAdminImpl {
                                     } finally {
                                         countDownLatch.countDown();
                                     }
-                                }, isUniqKey);
+                                }
+                            }, isUniqKey);
                     } catch (Exception e) {
                         log.warn("queryMessage exception", e);
                     }
-                });
+
+                }
 
                 boolean ok = countDownLatch.await(timeoutMillis * 4, TimeUnit.MILLISECONDS);
                 if (!ok) {
@@ -357,7 +375,7 @@ public class MQAdminImpl {
                 }
 
                 long indexLastUpdateTimestamp = 0;
-                List<MessageExt> messageList = new LinkedList<>();
+                List<MessageExt> messageList = new LinkedList<MessageExt>();
                 for (QueryResult qr : queryResultList) {
                     if (qr.getIndexLastUpdateTimestamp() > indexLastUpdateTimestamp) {
                         indexLastUpdateTimestamp = qr.getIndexLastUpdateTimestamp();
@@ -387,10 +405,12 @@ public class MQAdminImpl {
                             if (keys != null) {
                                 boolean matched = false;
                                 String[] keyArray = keys.split(MessageConst.KEY_SEPARATOR);
-                                for (String k : keyArray) {
-                                    if (key.equals(k)) {
-                                        matched = true;
-                                        break;
+                                if (keyArray != null) {
+                                    for (String k : keyArray) {
+                                        if (key.equals(k)) {
+                                            matched = true;
+                                            break;
+                                        }
                                     }
                                 }
 
@@ -401,6 +421,13 @@ public class MQAdminImpl {
                                 }
                             }
                         }
+                    }
+                }
+
+                //If namespace not null , reset Topic without namespace.
+                for (MessageExt messageExt : messageList) {
+                    if (null != this.mQClientFactory.getClientConfig().getNamespace()) {
+                        messageExt.setTopic(NamespaceUtil.withoutNamespace(messageExt.getTopic(), this.mQClientFactory.getClientConfig().getNamespace()));
                     }
                 }
 

@@ -28,5 +28,5 @@ public enum ReadOffsetType {
     /**
      * From memory,then from storage
      */
-    MEMORY_FIRST_THEN_STORE
+    MEMORY_FIRST_THEN_STORE;
 }

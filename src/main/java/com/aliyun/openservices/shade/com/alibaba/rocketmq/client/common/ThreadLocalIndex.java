@@ -20,7 +20,7 @@ package com.aliyun.openservices.shade.com.alibaba.rocketmq.client.common;
 import java.util.Random;
 
 public class ThreadLocalIndex {
-    private final ThreadLocal<Integer> threadLocalIndex = new ThreadLocal<>();
+    private final ThreadLocal<Integer> threadLocalIndex = new ThreadLocal<Integer>();
     private final Random random = new Random();
 
     public int getAndIncrement() {

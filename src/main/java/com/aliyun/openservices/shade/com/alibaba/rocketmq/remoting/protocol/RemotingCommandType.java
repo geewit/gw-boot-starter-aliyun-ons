@@ -18,5 +18,5 @@ package com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol;
 
 public enum RemotingCommandType {
     REQUEST_COMMAND,
-    RESPONSE_COMMAND
+    RESPONSE_COMMAND;
 }

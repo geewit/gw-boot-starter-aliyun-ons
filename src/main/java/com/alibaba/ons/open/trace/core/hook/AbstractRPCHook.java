@@ -1,29 +1,30 @@
 package com.alibaba.ons.open.trace.core.hook;
 
-import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.CommandCustomHeader;
-import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.RPCHook;
-import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.RemotingCommand;
-
 import java.lang.reflect.Field;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.CommandCustomHeader;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.RPCHook;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.RemotingCommand;
 
 import static com.aliyun.openservices.ons.api.impl.authority.SessionCredentials.AccessKey;
 import static com.aliyun.openservices.ons.api.impl.authority.SessionCredentials.ONSChannelKey;
 
 
 /**
- * @author lansheng.zj
+ * @author  lansheng.zj
  */
 public abstract class AbstractRPCHook implements RPCHook {
-    protected ConcurrentHashMap<Class<? extends CommandCustomHeader>, Field[]> fieldCache = new ConcurrentHashMap<>();
+    protected ConcurrentHashMap<Class<? extends CommandCustomHeader>, Field[]> fieldCache =
+            new ConcurrentHashMap<Class<? extends CommandCustomHeader>, Field[]>();
 
 
     protected SortedMap<String, String> parseRequestContent(RemotingCommand request, String ak, String onsChannel) {
         CommandCustomHeader header = request.readCustomHeader();
         // sort property
-        SortedMap<String, String> map = new TreeMap<>();
+        SortedMap<String, String> map = new TreeMap<String, String>();
         map.put(AccessKey, ak);
         map.put(ONSChannelKey, onsChannel);
         try {

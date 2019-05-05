@@ -1,14 +1,18 @@
 package com.alibaba.ons.open.trace.core.dispatch;
 
-import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.exception.MQClientException;
 import java.io.IOException;
 
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.exception.MQClientException;
+
 /**
+ * @author MQDevelopers
  * 异步传输数据模块
  */
 public interface AsyncDispatcher {
     /**
      * 初始化异步传输数据模块
+     *
+     * @throws MQClientException
      */
     void start() throws MQClientException;
 

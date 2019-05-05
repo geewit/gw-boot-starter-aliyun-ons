@@ -27,7 +27,7 @@ import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.heartb
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.RemotingSerializable;
 
 public class ConsumerConnection extends RemotingSerializable {
-    private HashSet<Connection> connectionSet = new HashSet<>();
+    private HashSet<Connection> connectionSet = new HashSet<Connection>();
     private ConcurrentMap<String/* Topic */, SubscriptionData> subscriptionTable =
         new ConcurrentHashMap<String, SubscriptionData>();
     private ConsumeType consumeType;

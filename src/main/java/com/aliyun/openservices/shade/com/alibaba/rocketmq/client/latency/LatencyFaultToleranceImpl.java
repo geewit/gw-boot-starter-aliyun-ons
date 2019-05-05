@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.common.ThreadLocalIndex;
 
 public class LatencyFaultToleranceImpl implements LatencyFaultTolerance<String> {
-    private final ConcurrentHashMap<String, FaultItem> faultItemTable = new ConcurrentHashMap<>(16);
+    private final ConcurrentHashMap<String, FaultItem> faultItemTable = new ConcurrentHashMap<String, FaultItem>(16);
 
     private final ThreadLocalIndex whichItemWorst = new ThreadLocalIndex();
 
@@ -51,7 +51,10 @@ public class LatencyFaultToleranceImpl implements LatencyFaultTolerance<String> 
     @Override
     public boolean isAvailable(final String name) {
         final FaultItem faultItem = this.faultItemTable.get(name);
-        return faultItem == null || faultItem.isAvailable();
+        if (faultItem != null) {
+            return faultItem.isAvailable();
+        }
+        return true;
     }
 
     @Override
@@ -62,7 +65,7 @@ public class LatencyFaultToleranceImpl implements LatencyFaultTolerance<String> 
     @Override
     public String pickOneAtLeast() {
         final Enumeration<FaultItem> elements = this.faultItemTable.elements();
-        List<FaultItem> tmpList = new LinkedList<>();
+        List<FaultItem> tmpList = new LinkedList<FaultItem>();
         while (elements.hasMoreElements()) {
             final FaultItem faultItem = elements.nextElement();
             tmpList.add(faultItem);
@@ -105,24 +108,22 @@ public class LatencyFaultToleranceImpl implements LatencyFaultTolerance<String> 
         @Override
         public int compareTo(final FaultItem other) {
             if (this.isAvailable() != other.isAvailable()) {
-                if (this.isAvailable()) {
+                if (this.isAvailable())
                     return -1;
-                }
 
-                if (other.isAvailable()) {
+                if (other.isAvailable())
                     return 1;
-                }
             }
 
-            if (this.currentLatency < other.currentLatency) {
+            if (this.currentLatency < other.currentLatency)
                 return -1;
-            } else if (this.currentLatency > other.currentLatency) {
+            else if (this.currentLatency > other.currentLatency) {
                 return 1;
             }
 
-            if (this.startTimestamp < other.startTimestamp) {
+            if (this.startTimestamp < other.startTimestamp)
                 return -1;
-            } else if (this.startTimestamp > other.startTimestamp) {
+            else if (this.startTimestamp > other.startTimestamp) {
                 return 1;
             }
 
@@ -143,19 +144,18 @@ public class LatencyFaultToleranceImpl implements LatencyFaultTolerance<String> 
 
         @Override
         public boolean equals(final Object o) {
-            if (this == o) {
+            if (this == o)
                 return true;
-            }
-            if (!(o instanceof FaultItem)) {
+            if (!(o instanceof FaultItem))
                 return false;
-            }
 
             final FaultItem faultItem = (FaultItem) o;
 
-            if (getCurrentLatency() != faultItem.getCurrentLatency()) {
+            if (getCurrentLatency() != faultItem.getCurrentLatency())
                 return false;
-            }
-            return getStartTimestamp() == faultItem.getStartTimestamp() && (getName() != null ? getName().equals(faultItem.getName()) : faultItem.getName() == null);
+            if (getStartTimestamp() != faultItem.getStartTimestamp())
+                return false;
+            return getName() != null ? getName().equals(faultItem.getName()) : faultItem.getName() == null;
 
         }
 

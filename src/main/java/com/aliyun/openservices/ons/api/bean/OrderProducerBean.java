@@ -34,6 +34,13 @@ public class OrderProducerBean implements OrderProducer {
         this.orderProducer.start();
     }
 
+    @Override
+    public void updateCredential(Properties credentialProperties) {
+        if (this.orderProducer != null) {
+            this.orderProducer.updateCredential(credentialProperties);
+        }
+    }
+
     /**
      * 关闭该{@code OrderProducer}实例，建议配置为Bean的destroy-method
      */

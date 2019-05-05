@@ -23,7 +23,7 @@ public class PermName {
     public static final int PERM_INHERIT = 0x1 << 0;
 
     public static String perm2String(final int perm) {
-        final StringBuilder sb = new StringBuilder("---");
+        final StringBuffer sb = new StringBuffer("---");
         if (isReadable(perm)) {
             sb.replace(0, 1, "R");
         }
@@ -49,5 +49,9 @@ public class PermName {
 
     public static boolean isInherited(final int perm) {
         return (perm & PERM_INHERIT) == PERM_INHERIT;
+    }
+
+    public static boolean isPriority(final int perm) {
+        return (perm & PERM_PRIORITY) == PERM_PRIORITY;
     }
 }

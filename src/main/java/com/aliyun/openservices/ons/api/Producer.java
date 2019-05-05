@@ -12,17 +12,20 @@ import java.util.concurrent.ExecutorService;
  *         <li>一个实例可以发送多个主题的消息</li>
  *         <li>正常情况下, 一个实例足够高效完成本模块的发送任务, 无需创建多个实例</li>
  *     </ol>
+ * </p>
  */
 public interface Producer extends Admin {
 
     /**
      * 启动服务
      */
+    @Override
     void start();
 
     /**
      * 关闭服务
      */
+    @Override
     void shutdown();
 
     /**

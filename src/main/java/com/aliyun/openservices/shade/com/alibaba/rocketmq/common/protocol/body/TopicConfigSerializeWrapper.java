@@ -25,7 +25,7 @@ import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.Remo
 
 public class TopicConfigSerializeWrapper extends RemotingSerializable {
     private ConcurrentMap<String, TopicConfig> topicConfigTable =
-        new ConcurrentHashMap<>();
+        new ConcurrentHashMap<String, TopicConfig>();
     private DataVersion dataVersion = new DataVersion();
 
     public ConcurrentMap<String, TopicConfig> getTopicConfigTable() {

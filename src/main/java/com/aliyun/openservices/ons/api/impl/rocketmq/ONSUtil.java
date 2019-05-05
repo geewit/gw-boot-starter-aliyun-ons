@@ -1,21 +1,24 @@
 package com.aliyun.openservices.ons.api.impl.rocketmq;
 
-import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageConst;
-import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageExt;
-import com.aliyun.openservices.ons.api.Message;
-import com.aliyun.openservices.ons.api.MessageAccessor;
-import com.aliyun.openservices.ons.api.exception.ONSClientException;
 import java.lang.reflect.Field;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 
-public class ONSUtil {
-    private static final Set<String> ReservedKeySetRMQ = new HashSet<>();
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageConst;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageExt;
 
-    private static final Set<String> ReservedKeySetONS = new HashSet<>();
+import com.aliyun.openservices.ons.api.Message;
+import com.aliyun.openservices.ons.api.MessageAccessor;
+import com.aliyun.openservices.ons.api.exception.ONSClientException;
+
+public class ONSUtil {
+    private static final Set<String> RESERVED_KEY_SET_RMQ = new HashSet<String>();
+
+    private static final Set<String> RESERVED_KEY_SET_ONS = new HashSet<String>();
 
 
     static {
@@ -23,29 +26,29 @@ public class ONSUtil {
         /**
          * RMQ
          */
-        ReservedKeySetRMQ.add(MessageConst.PROPERTY_KEYS);
-        ReservedKeySetRMQ.add(MessageConst.PROPERTY_TAGS);
-        ReservedKeySetRMQ.add(MessageConst.PROPERTY_WAIT_STORE_MSG_OK);
-        ReservedKeySetRMQ.add(MessageConst.PROPERTY_DELAY_TIME_LEVEL);
-        ReservedKeySetRMQ.add(MessageConst.PROPERTY_RETRY_TOPIC);
-        ReservedKeySetRMQ.add(MessageConst.PROPERTY_REAL_TOPIC);
-        ReservedKeySetRMQ.add(MessageConst.PROPERTY_REAL_QUEUE_ID);
-        ReservedKeySetRMQ.add(MessageConst.PROPERTY_TRANSACTION_PREPARED);
-        ReservedKeySetRMQ.add(MessageConst.PROPERTY_PRODUCER_GROUP);
-        ReservedKeySetRMQ.add(MessageConst.PROPERTY_MIN_OFFSET);
-        ReservedKeySetRMQ.add(MessageConst.PROPERTY_MAX_OFFSET);
+        RESERVED_KEY_SET_RMQ.add(MessageConst.PROPERTY_KEYS);
+        RESERVED_KEY_SET_RMQ.add(MessageConst.PROPERTY_TAGS);
+        RESERVED_KEY_SET_RMQ.add(MessageConst.PROPERTY_WAIT_STORE_MSG_OK);
+        RESERVED_KEY_SET_RMQ.add(MessageConst.PROPERTY_DELAY_TIME_LEVEL);
+        RESERVED_KEY_SET_RMQ.add(MessageConst.PROPERTY_RETRY_TOPIC);
+        RESERVED_KEY_SET_RMQ.add(MessageConst.PROPERTY_REAL_TOPIC);
+        RESERVED_KEY_SET_RMQ.add(MessageConst.PROPERTY_REAL_QUEUE_ID);
+        RESERVED_KEY_SET_RMQ.add(MessageConst.PROPERTY_TRANSACTION_PREPARED);
+        RESERVED_KEY_SET_RMQ.add(MessageConst.PROPERTY_PRODUCER_GROUP);
+        RESERVED_KEY_SET_RMQ.add(MessageConst.PROPERTY_MIN_OFFSET);
+        RESERVED_KEY_SET_RMQ.add(MessageConst.PROPERTY_MAX_OFFSET);
 
         /**
          * ONS
          */
-        ReservedKeySetONS.add(Message.SystemPropKey.TAG);
-        ReservedKeySetONS.add(Message.SystemPropKey.KEY);
-        ReservedKeySetONS.add(Message.SystemPropKey.MSGID);
-        ReservedKeySetONS.add(Message.SystemPropKey.RECONSUMETIMES);
-        ReservedKeySetONS.add(Message.SystemPropKey.STARTDELIVERTIME);
-        ReservedKeySetONS.add(Message.SystemPropKey.BORNHOST);
-        ReservedKeySetONS.add(Message.SystemPropKey.BORNTIMESTAMP);
-        ReservedKeySetONS.add(Message.SystemPropKey.SHARDINGKEY);
+        RESERVED_KEY_SET_ONS.add(Message.SystemPropKey.TAG);
+        RESERVED_KEY_SET_ONS.add(Message.SystemPropKey.KEY);
+        RESERVED_KEY_SET_ONS.add(Message.SystemPropKey.MSGID);
+        RESERVED_KEY_SET_ONS.add(Message.SystemPropKey.RECONSUMETIMES);
+        RESERVED_KEY_SET_ONS.add(Message.SystemPropKey.STARTDELIVERTIME);
+        RESERVED_KEY_SET_ONS.add(Message.SystemPropKey.BORNHOST);
+        RESERVED_KEY_SET_ONS.add(Message.SystemPropKey.BORNTIMESTAMP);
+        RESERVED_KEY_SET_ONS.add(Message.SystemPropKey.SHARDINGKEY);
     }
 
 
@@ -77,8 +80,10 @@ public class ONSUtil {
 
         Properties systemProperties = MessageAccessor.getSystemProperties(message);
         if (systemProperties != null) {
-            for (Entry<Object, Object> next : systemProperties.entrySet()) {
-                if (!ReservedKeySetONS.contains(next.getKey().toString())) {
+            Iterator<Entry<Object, Object>> it = systemProperties.entrySet().iterator();
+            while (it.hasNext()) {
+                Entry<Object, Object> next = it.next();
+                if (!RESERVED_KEY_SET_ONS.contains(next.getKey().toString())) {
                     com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageAccessor.putProperty(msgRMQ, next.getKey().toString(),
                             next.getValue().toString());
                 }
@@ -87,8 +92,10 @@ public class ONSUtil {
 
         Properties userProperties = message.getUserProperties();
         if (userProperties != null) {
-            for (Entry<Object, Object> next : userProperties.entrySet()) {
-                if (!ReservedKeySetRMQ.contains(next.getKey().toString())) {
+            Iterator<Entry<Object, Object>> it = userProperties.entrySet().iterator();
+            while (it.hasNext()) {
+                Entry<Object, Object> next = it.next();
+                if (!RESERVED_KEY_SET_RMQ.contains(next.getKey().toString())) {
                     com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageAccessor.putProperty(msgRMQ, next.getKey().toString(),
                             next.getValue().toString());
                 }
@@ -119,9 +126,11 @@ public class ONSUtil {
 
         Map<String, String> properties = msgRMQ.getProperties();
         if (properties != null) {
-            for (Entry<String, String> next : properties.entrySet()) {
+            Iterator<Entry<String, String>> it = properties.entrySet().iterator();
+            while (it.hasNext()) {
+                Entry<String, String> next = it.next();
                 // System
-                if (ReservedKeySetRMQ.contains(next.getKey()) || ReservedKeySetONS.contains(next.getKey())) {
+                if (RESERVED_KEY_SET_RMQ.contains(next.getKey()) || RESERVED_KEY_SET_ONS.contains(next.getKey())) {
                     MessageAccessor.putSystemProperties(message, next.getKey(), next.getValue());
                 }
                 // User

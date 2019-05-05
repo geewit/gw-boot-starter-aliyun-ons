@@ -16,21 +16,22 @@
  */
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.netty;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.MessageToByteEncoder;
+import com.aliyun.openservices.shade.io.netty.buffer.ByteBuf;
+import com.aliyun.openservices.shade.io.netty.channel.ChannelHandlerContext;
+import com.aliyun.openservices.shade.io.netty.handler.codec.MessageToByteEncoder;
 import java.nio.ByteBuffer;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.common.RemotingHelper;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.common.RemotingUtil;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLoggerFactory;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.RemotingCommand;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class NettyEncoder extends MessageToByteEncoder<RemotingCommand> {
-    private static final Logger log = LoggerFactory.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
+    private static final InternalLogger log = InternalLoggerFactory.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
 
     @Override
-    public void encode(ChannelHandlerContext ctx, RemotingCommand remotingCommand, ByteBuf out) {
+    public void encode(ChannelHandlerContext ctx, RemotingCommand remotingCommand, ByteBuf out)
+        throws Exception {
         try {
             ByteBuffer header = remotingCommand.encodeHeader();
             out.writeBytes(header);

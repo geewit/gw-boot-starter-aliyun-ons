@@ -18,7 +18,7 @@ package com.aliyun.openservices.shade.com.alibaba.rocketmq.common;
 
 public class MQVersion {
 
-    public static final int CURRENT_VERSION = Version.V4_2_1.ordinal();
+    public static final int CURRENT_VERSION = Version.V4_3_4.ordinal();
 
     public static String getVersionDesc(int value) {
         int length = Version.values().length;
@@ -437,6 +437,7 @@ public class MQVersion {
         V4_3_1,
 
         V4_3_2_SNAPSHOT,
+        V4_3_2_INSTANCE,
         V4_3_2,
 
         V4_3_3_SNAPSHOT,

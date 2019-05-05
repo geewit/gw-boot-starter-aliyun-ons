@@ -16,7 +16,7 @@
  */
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.netty;
 
-import io.netty.channel.ChannelHandlerContext;
+import com.aliyun.openservices.shade.io.netty.channel.ChannelHandlerContext;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.RemotingCommand;
 
 /**

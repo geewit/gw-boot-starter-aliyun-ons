@@ -57,6 +57,7 @@ public class ONSFactory {
      *         <li>{@link PropertyKeyConst#SendMsgTimeoutMillis}</li>
      *         <li>{@link PropertyKeyConst#NAMESRV_ADDR} 该属性会覆盖{@link PropertyKeyConst#ONSAddr}</li>
      *     </ol>
+     * </p>
      *
      * <p>
      *     返回创建的{@link Producer}实例是线程安全, 可复用, 发送各个主题. 一般情况下, 一个进程中构建一个实例足够满足发送消息的需求.
@@ -79,6 +80,7 @@ public class ONSFactory {
      *        // 应用程序关闭退出时
      *        producer.shutdown();
      *   </pre>
+     * </p>
      *
      * @param properties Producer的配置参数
      * @return {@link Producer} 实例
@@ -104,6 +106,7 @@ public class ONSFactory {
      *         <li>{@link PropertyKeyConst#OnsChannel}</li>
      *         <li>{@link PropertyKeyConst#SendMsgTimeoutMillis}</li>
      *     </ul>
+     * </p>
      *
      * @param properties Producer的配置参数
      * @return {@code OrderProducer} 实例
@@ -130,6 +133,7 @@ public class ONSFactory {
      *         <li>{@link PropertyKeyConst#SendMsgTimeoutMillis}</li>
      *         <li>{@link PropertyKeyConst#CheckImmunityTimeInSeconds}</li>
      *     </ul>
+     * </p>
      * @param properties Producer的配置参数
      * @return {@code TransactionProducer} 实例
      */
@@ -155,6 +159,7 @@ public class ONSFactory {
      *         <li>{@link PropertyKeyConst#ConsumeTimeout}</li>
      *         <li>{@link PropertyKeyConst#OnsChannel}</li>
      *     </ul>
+     * </p>
      * @param properties Consumer的配置参数
      * @return {@code Consumer} 实例
      */
@@ -179,6 +184,7 @@ public class ONSFactory {
      *         <li>{@link PropertyKeyConst#ConsumeMessageBatchMaxSize}</li>
      *         <li>{@link PropertyKeyConst#OnsChannel}</li>
      *     </ul>
+     * </p>
      * @param properties BatchConsumer的配置参数
      * @return {@code BatchConsumer} 实例
      */
@@ -203,10 +209,12 @@ public class ONSFactory {
      *         <li>{@link PropertyKeyConst#ConsumeTimeout}</li>
      *         <li>{@link PropertyKeyConst#OnsChannel}</li>
      *     </ul>
+     * </p>
      * @param properties Consumer的配置参数
      * @return {@code OrderConsumer} 实例
      */
     public static OrderConsumer createOrderedConsumer(final Properties properties) {
         return onsFactory.createOrderedConsumer(properties);
     }
+
 }

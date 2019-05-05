@@ -16,14 +16,15 @@
  */
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.common;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLoggerFactory;
 
 /**
  * Base class for background thread
  */
 public abstract class ServiceThread implements Runnable {
-    private static final Logger log = LoggerFactory.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
+    private static final InternalLogger log = InternalLoggerFactory.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
 
     private static final long JOIN_TIME = 90 * 1000;
     protected final Thread thread;

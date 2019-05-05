@@ -1,11 +1,20 @@
 package com.aliyun.openservices.ons.api.impl.rocketmq;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+
+import javax.annotation.Generated;
+
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.consumer.listener.MessageListenerConcurrently;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.UtilAll;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageExt;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.heartbeat.MessageModel;
+
 import com.aliyun.openservices.ons.api.Action;
 import com.aliyun.openservices.ons.api.Constants;
 import com.aliyun.openservices.ons.api.ConsumeContext;
@@ -15,16 +24,11 @@ import com.aliyun.openservices.ons.api.PropertyValueConst;
 import com.aliyun.openservices.ons.api.batch.BatchConsumer;
 import com.aliyun.openservices.ons.api.batch.BatchMessageListener;
 import com.aliyun.openservices.ons.api.exception.ONSClientException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-
+@Generated("ons-client")
 public class BatchConsumerImpl extends ONSConsumerAbstract implements BatchConsumer {
     private final static int MAX_BATCH_SIZE = 32;
     private final static int MIN_BATCH_SIZE = 1;
-    private final ConcurrentHashMap<String/* Topic */, BatchMessageListener> subscribeTable = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, BatchMessageListener> subscribeTable = new ConcurrentHashMap<String, BatchMessageListener>();
 
     public BatchConsumerImpl(final Properties properties) {
         super(properties);
@@ -75,7 +79,7 @@ public class BatchConsumerImpl extends ONSConsumerAbstract implements BatchConsu
         @Override
         public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> rmqMsgList,
             ConsumeConcurrentlyContext contextRMQ) {
-            List<Message> msgList = new ArrayList<>();
+            List<Message> msgList = new ArrayList<Message>();
             for (MessageExt rmqMsg : rmqMsgList) {
                 Message msg = ONSUtil.msgConvert(rmqMsg);
                 Map<String, String> propertiesMap = rmqMsg.getProperties();

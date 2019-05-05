@@ -20,10 +20,9 @@
  */
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.heartbeat;
 
-import com.alibaba.fastjson.annotation.JSONField;
-import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.filter.ExpressionType;
-
+import com.aliyun.openservices.shade.com.alibaba.fastjson.annotation.JSONField;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageDecoder;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.filter.ExpressionType;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -34,14 +33,16 @@ public class SubscriptionData implements Comparable<SubscriptionData> {
     private boolean classFilterMode = false;
     private String topic;
     private String subString;
-    private Set<String> tagsSet = new HashSet<>();
-    private Set<Integer> codeSet = new HashSet<>();
+    private Set<String> tagsSet = new HashSet<String>();
+    private Set<Integer> codeSet = new HashSet<Integer>();
     private long subVersion = System.currentTimeMillis();
-    private String expressionType = ExpressionType.TAG;
+
     /**
      * self define properties.
      */
     private Map<String, String> properties;
+
+    private String expressionType = ExpressionType.TAG;
 
     @JSONField(serialize = false)
     private String filterClassSource;
@@ -150,55 +151,43 @@ public class SubscriptionData implements Comparable<SubscriptionData> {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) {
+        if (this == obj)
             return true;
-        }
-        if (obj == null) {
+        if (obj == null)
             return false;
-        }
-        if (getClass() != obj.getClass()) {
+        if (getClass() != obj.getClass())
             return false;
-        }
         SubscriptionData other = (SubscriptionData) obj;
-        if (classFilterMode != other.classFilterMode) {
+        if (classFilterMode != other.classFilterMode)
             return false;
-        }
         if (codeSet == null) {
-            if (other.codeSet != null) {
+            if (other.codeSet != null)
                 return false;
-            }
-        } else if (!codeSet.equals(other.codeSet)) {
+        } else if (!codeSet.equals(other.codeSet))
             return false;
-        }
         if (subString == null) {
-            if (other.subString != null) {
+            if (other.subString != null)
                 return false;
-            }
-        } else if (!subString.equals(other.subString)) {
+        } else if (!subString.equals(other.subString))
             return false;
-        }
-        if (subVersion != other.subVersion) {
+        if (subVersion != other.subVersion)
             return false;
-        }
         if (tagsSet == null) {
-            if (other.tagsSet != null) {
+            if (other.tagsSet != null)
                 return false;
-            }
-        } else if (!tagsSet.equals(other.tagsSet)) {
+        } else if (!tagsSet.equals(other.tagsSet))
             return false;
-        }
         if (topic == null) {
-            if (other.topic != null) {
+            if (other.topic != null)
                 return false;
-            }
-        } else if (!topic.equals(other.topic)) {
+        } else if (!topic.equals(other.topic))
             return false;
-        }
         if (expressionType == null) {
-            return other.expressionType == null;
-        } else {
-            return expressionType.equals(other.expressionType);
-        }
+            if (other.expressionType != null)
+                return false;
+        } else if (!expressionType.equals(other.expressionType))
+            return false;
+        return true;
     }
 
     @Override

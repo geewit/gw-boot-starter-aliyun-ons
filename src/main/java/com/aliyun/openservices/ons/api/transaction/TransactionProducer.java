@@ -11,11 +11,13 @@ public interface TransactionProducer extends Admin {
     /**
      * 启动事务消息发送Producer服务
      */
+    @Override
     void start();
 
     /**
      * 关闭事务消息发送Producer服务
      */
+    @Override
     void shutdown();
 
     /**

@@ -21,7 +21,7 @@ import java.util.HashSet;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.RemotingSerializable;
 
 public class ProducerConnection extends RemotingSerializable {
-    private HashSet<Connection> connectionSet = new HashSet<>();
+    private HashSet<Connection> connectionSet = new HashSet<Connection>();
 
     public HashSet<Connection> getConnectionSet() {
         return connectionSet;

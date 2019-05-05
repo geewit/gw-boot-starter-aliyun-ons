@@ -31,6 +31,7 @@ public class BrokerData implements Comparable<BrokerData> {
     private final Random random = new Random();
 
     public BrokerData() {
+
     }
 
     public BrokerData(String cluster, String brokerName, HashMap<Long, String> brokerAddrs) {
@@ -83,28 +84,24 @@ public class BrokerData implements Comparable<BrokerData> {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) {
+        if (this == obj)
             return true;
-        }
-        if (obj == null) {
+        if (obj == null)
             return false;
-        }
-        if (getClass() != obj.getClass()) {
+        if (getClass() != obj.getClass())
             return false;
-        }
         BrokerData other = (BrokerData) obj;
         if (brokerAddrs == null) {
-            if (other.brokerAddrs != null) {
+            if (other.brokerAddrs != null)
                 return false;
-            }
-        } else if (!brokerAddrs.equals(other.brokerAddrs)) {
+        } else if (!brokerAddrs.equals(other.brokerAddrs))
             return false;
-        }
         if (brokerName == null) {
-            return other.brokerName == null;
-        } else {
-            return brokerName.equals(other.brokerName);
-        }
+            if (other.brokerName != null)
+                return false;
+        } else if (!brokerName.equals(other.brokerName))
+            return false;
+        return true;
     }
 
     @Override

@@ -27,6 +27,7 @@ public class GetConsumeStatsInBrokerHeader implements CommandCustomHeader {
 
     @Override
     public void checkFields() throws RemotingCommandException {
+
     }
 
     public boolean isOrder() {

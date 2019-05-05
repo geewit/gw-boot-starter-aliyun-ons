@@ -30,6 +30,7 @@ public class QueryTopicConsumeByWhoRequestHeader implements CommandCustomHeader 
 
     @Override
     public void checkFields() throws RemotingCommandException {
+
     }
 
     public String getTopic() {

@@ -9,7 +9,7 @@ import java.util.Set;
  */
 public class OnsTraceTransferBean {
     private String transData;
-    private Set<String> transKey = new HashSet<>();
+    private Set<String> transKey = new HashSet<String>();
 
 
     public String getTransData() {

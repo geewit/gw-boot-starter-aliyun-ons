@@ -22,7 +22,8 @@ import java.util.concurrent.ConcurrentMap;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.RemotingSerializable;
 
 public class ConsumerOffsetSerializeWrapper extends RemotingSerializable {
-    private ConcurrentMap<String, ConcurrentMap<Integer, Long>> offsetTable = new ConcurrentHashMap<>(512);
+    private ConcurrentMap<String/* topic@group */, ConcurrentMap<Integer, Long>> offsetTable =
+        new ConcurrentHashMap<String, ConcurrentMap<Integer, Long>>(512);
 
     public ConcurrentMap<String, ConcurrentMap<Integer, Long>> getOffsetTable() {
         return offsetTable;

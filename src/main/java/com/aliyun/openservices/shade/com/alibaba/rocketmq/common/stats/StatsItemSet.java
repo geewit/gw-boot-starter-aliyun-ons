@@ -17,21 +17,26 @@
 
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.common.stats;
 
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.UtilAll;
-import org.slf4j.Logger;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
 
 public class StatsItemSet {
-    private final ConcurrentMap<String, StatsItem> statsItemTable = new ConcurrentHashMap<>(128);
+    private final ConcurrentMap<String/* key */, StatsItem> statsItemTable =
+        new ConcurrentHashMap<String, StatsItem>(128);
+///
 
     private final String statsName;
     private final ScheduledExecutorService scheduledExecutorService;
-    private final Logger log;
+    private final InternalLogger log;
 
-    public StatsItemSet(String statsName, ScheduledExecutorService scheduledExecutorService, Logger log) {
+    public StatsItemSet(String statsName, ScheduledExecutorService scheduledExecutorService, InternalLogger log) {
         this.statsName = statsName;
         this.scheduledExecutorService = scheduledExecutorService;
         this.log = log;
@@ -40,71 +45,123 @@ public class StatsItemSet {
 
     public void init() {
 
-        this.scheduledExecutorService.scheduleAtFixedRate(() -> {
-            try {
-                samplingInSeconds();
-            } catch (Throwable ignored) {
+        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    samplingInSeconds();
+                } catch (Throwable ignored) {
+                }
             }
         }, 0, 10, TimeUnit.SECONDS);
 
-        this.scheduledExecutorService.scheduleAtFixedRate(() -> {
-            try {
-                samplingInMinutes();
-            } catch (Throwable ignored) {
+        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    samplingInMinutes();
+                } catch (Throwable ignored) {
+                }
             }
         }, 0, 10, TimeUnit.MINUTES);
 
-        this.scheduledExecutorService.scheduleAtFixedRate(() -> {
-            try {
-                samplingInHour();
-            } catch (Throwable ignored) {
+        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    samplingInHour();
+                } catch (Throwable ignored) {
+                }
             }
         }, 0, 1, TimeUnit.HOURS);
 
-        this.scheduledExecutorService.scheduleAtFixedRate(() -> {
-            try {
-                printAtMinutes();
-            } catch (Throwable ignored) {
+        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    printAtMinutes();
+                } catch (Throwable ignored) {
+                }
             }
         }, Math.abs(UtilAll.computNextMinutesTimeMillis() - System.currentTimeMillis()), 1000 * 60, TimeUnit.MILLISECONDS);
 
-        this.scheduledExecutorService.scheduleAtFixedRate(() -> {
-            try {
-                printAtHour();
-            } catch (Throwable ignored) {
+        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    printAtHour();
+                } catch (Throwable ignored) {
+                }
             }
         }, Math.abs(UtilAll.computNextHourTimeMillis() - System.currentTimeMillis()), 1000 * 60 * 60, TimeUnit.MILLISECONDS);
 
-        this.scheduledExecutorService.scheduleAtFixedRate(() -> {
-            try {
-                printAtDay();
-            } catch (Throwable ignored) {
+        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    printAtDay();
+                } catch (Throwable ignored) {
+                }
             }
         }, Math.abs(UtilAll.computNextMorningTimeMillis() - System.currentTimeMillis()), 1000 * 60 * 60 * 24, TimeUnit.MILLISECONDS);
     }
 
     private void samplingInSeconds() {
-        this.statsItemTable.forEach((key, value) -> value.samplingInSeconds());
+        Iterator<Entry<String, StatsItem>> it = this.statsItemTable.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<String, StatsItem> next = it.next();
+            next.getValue().samplingInSeconds();
+        }
     }
 
     private void samplingInMinutes() {
-        this.statsItemTable.forEach((key, value) -> value.samplingInMinutes());
+        Iterator<Entry<String, StatsItem>> it = this.statsItemTable.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<String, StatsItem> next = it.next();
+            StatsItem statsItem = next.getValue();
+            statsItem.samplingInMinutes();
+
+            LinkedList<CallSnapshot> csList = statsItem.getCsListHour();
+            if (csList != null && csList.size() >= 7) {
+                CallSnapshot first = csList.getFirst();
+                CallSnapshot last = csList.getLast();
+                if ((first.getTimes() == last.getTimes()) && (first.getValue() == last.getValue())) {
+                    it.remove();
+                }
+            }
+        }
     }
 
     private void samplingInHour() {
-        this.statsItemTable.forEach((key, value) -> value.samplingInHour());
+        Iterator<Entry<String, StatsItem>> it = this.statsItemTable.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<String, StatsItem> next = it.next();
+            next.getValue().samplingInHour();
+        }
     }
 
     private void printAtMinutes() {
-        this.statsItemTable.forEach((key, value) -> value.printAtMinutes());
+        Iterator<Entry<String, StatsItem>> it = this.statsItemTable.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<String, StatsItem> next = it.next();
+            next.getValue().printAtMinutes();
+        }
     }
 
     private void printAtHour() {
-        this.statsItemTable.forEach((key, value) -> value.printAtHour());
+        Iterator<Entry<String, StatsItem>> it = this.statsItemTable.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<String, StatsItem> next = it.next();
+            next.getValue().printAtHour();
+        }
     }
 
     private void printAtDay() {
-        this.statsItemTable.forEach((key, value) -> value.printAtDay());
+        Iterator<Entry<String, StatsItem>> it = this.statsItemTable.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<String, StatsItem> next = it.next();
+            next.getValue().printAtDay();
+        }
     }
 
     public void addValue(final String statsKey, final int incValue, final int incTimes) {
@@ -117,7 +174,12 @@ public class StatsItemSet {
         StatsItem statsItem = this.statsItemTable.get(statsKey);
         if (null == statsItem) {
             statsItem = new StatsItem(this.statsName, statsKey, this.scheduledExecutorService, this.log);
-            this.statsItemTable.put(statsKey, statsItem);
+            StatsItem prev = this.statsItemTable.put(statsKey, statsItem);
+
+            if (null == prev) {
+
+                // statsItem.init();
+            }
         }
 
         return statsItem;

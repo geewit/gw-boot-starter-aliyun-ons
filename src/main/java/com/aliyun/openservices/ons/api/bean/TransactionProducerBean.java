@@ -43,6 +43,13 @@ public class TransactionProducerBean implements TransactionProducer {
         this.transactionProducer.start();
     }
 
+    @Override
+    public void updateCredential(Properties credentialProperties) {
+        if (this.transactionProducer != null) {
+            this.transactionProducer.updateCredential(credentialProperties);
+        }
+    }
+
     /**
      * 关闭该{@code TransactionProducer}实例，建议配置为Bean的destroy-method
      */

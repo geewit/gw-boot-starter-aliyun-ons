@@ -26,11 +26,11 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.constant.LoggerName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLoggerFactory;
 
 public final class ThreadUtils {
-    private static final Logger log = LoggerFactory.getLogger(LoggerName.TOOLS_LOGGER_NAME);
+    private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.TOOLS_LOGGER_NAME);
 
     public static ExecutorService newThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime,
         TimeUnit unit, BlockingQueue<Runnable> workQueue, String processName, boolean isDaemon) {
@@ -100,7 +100,11 @@ public final class ThreadUtils {
     public static Thread newThread(String name, Runnable runnable, boolean daemon) {
         Thread thread = new Thread(runnable, name);
         thread.setDaemon(daemon);
-        thread.setUncaughtExceptionHandler((t, e) -> log.error("Uncaught exception in thread '" + t.getName() + "':", e));
+        thread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            public void uncaughtException(Thread t, Throwable e) {
+                log.error("Uncaught exception in thread '" + t.getName() + "':", e);
+            }
+        });
         return thread;
     }
 

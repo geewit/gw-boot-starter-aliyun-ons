@@ -16,10 +16,17 @@
  */
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.client;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import com.aliyun.openservices.shade.org.apache.commons.lang3.StringUtils;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.MixAll;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.UtilAll;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageQueue;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.NamespaceUtil;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.common.RemotingUtil;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.netty.TlsSystemConfig;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.LanguageCode;
 
 /**
  * Client Common configuration
@@ -28,11 +35,13 @@ public class ClientConfig {
     public static final String SEND_MESSAGE_WITH_VIP_CHANNEL_PROPERTY = "com.rocketmq.sendMessageWithVIPChannel";
     public static final String DECODE_READ_BODY = "com.rocketmq.read.body";
     public static final String DECODE_DECOMPRESS_BODY = "com.rocketmq.decompress.body";
+    public static final String AUTO_CLEAN_NO_ROUTE_TOPIC = "com.rocketmq.autoclean.noroute.topic";
     public static final String CLIENT_CALLBACK_EXECUTOR_THREAD_NUMS = "client.callback.executor.thread.nums";
 
     private String namesrvAddr = System.getProperty(MixAll.NAMESRV_ADDR_PROPERTY, System.getenv(MixAll.NAMESRV_ADDR_ENV));
     private String clientIP = RemotingUtil.getLocalAddress();
     private String instanceName = System.getProperty("rocketmq.client.name", "DEFAULT");
+    protected String namespace;
 
     private int clientCallbackExecutorThreads = Integer.parseInt(System.getProperty(CLIENT_CALLBACK_EXECUTOR_THREAD_NUMS,
         String.valueOf(Runtime.getRuntime().availableProcessors())));
@@ -53,8 +62,11 @@ public class ClientConfig {
     private boolean vipChannelEnabled = Boolean.parseBoolean(System.getProperty(SEND_MESSAGE_WITH_VIP_CHANNEL_PROPERTY, "true"));
     private boolean decodeReadBody = Boolean.parseBoolean(System.getProperty(DECODE_READ_BODY, "true"));
     private boolean decodeDecompressBody = Boolean.parseBoolean(System.getProperty(DECODE_DECOMPRESS_BODY, "true"));
+    private boolean autoCleanTopicRouteNotFound = Boolean.parseBoolean(System.getProperty(AUTO_CLEAN_NO_ROUTE_TOPIC, "false"));
 
     private boolean useTLS = TlsSystemConfig.tlsEnable;
+
+    private LanguageCode language = LanguageCode.JAVA;
 
     public String buildMQClientId() {
         StringBuilder sb = new StringBuilder();
@@ -87,9 +99,41 @@ public class ClientConfig {
     }
 
     public void changeInstanceNameToPID() {
-        if ("DEFAULT".equals(this.instanceName)) {
+        if (this.instanceName.equals("DEFAULT")) {
             this.instanceName = String.valueOf(UtilAll.getPid());
         }
+    }
+
+    public String withNamespace(String resource) {
+        return NamespaceUtil.wrapNamespace(this.getNamespace(), resource);
+    }
+
+    public Set<String> withNamespace(Set<String> resourceSet) {
+        Set<String> resourceWithNamespace = new HashSet<String>();
+        for (String resource : resourceSet) {
+            resourceWithNamespace.add(withNamespace(resource));
+        }
+        return resourceWithNamespace;
+    }
+
+    public String withoutNamespace(String resource) {
+        return NamespaceUtil.withoutNamespace(resource, this.getNamespace());
+    }
+
+    public Set<String> withoutNamespace(Set<String> resourceSet) {
+        Set<String> resourceWithoutNamespace = new HashSet<String>();
+        for (String resource : resourceSet) {
+            resourceWithoutNamespace.add(withoutNamespace(resource));
+        }
+        return resourceWithoutNamespace;
+    }
+
+    public MessageQueue queueWithNamespace(MessageQueue queue) {
+        if (StringUtils.isEmpty(this.getNamespace())) {
+            return queue;
+        }
+
+        return new MessageQueue(withNamespace(queue.getTopic()), queue.getBrokerName(), queue.getQueueId());
     }
 
     public void resetClientConfig(final ClientConfig cc) {
@@ -106,6 +150,9 @@ public class ClientConfig {
         this.decodeReadBody = cc.decodeReadBody;
         this.decodeDecompressBody = cc.decodeDecompressBody;
         this.useTLS = cc.useTLS;
+        this.language = cc.language;
+        this.namespace = cc.namespace;
+        this.autoCleanTopicRouteNotFound = cc.autoCleanTopicRouteNotFound;
     }
 
     public ClientConfig cloneClientConfig() {
@@ -123,6 +170,9 @@ public class ClientConfig {
         cc.decodeReadBody = decodeReadBody;
         cc.decodeDecompressBody = decodeDecompressBody;
         cc.useTLS = useTLS;
+        cc.language = language;
+        cc.namespace = namespace;
+        cc.autoCleanTopicRouteNotFound = autoCleanTopicRouteNotFound;
         return cc;
     }
 
@@ -206,12 +256,36 @@ public class ClientConfig {
         this.decodeDecompressBody = decodeDecompressBody;
     }
 
+    public String getNamespace() {
+        return namespace;
+    }
+
+    protected void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+
     public boolean isUseTLS() {
         return useTLS;
     }
 
     public void setUseTLS(boolean useTLS) {
         this.useTLS = useTLS;
+    }
+
+    public LanguageCode getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(LanguageCode language) {
+        this.language = language;
+    }
+
+    public boolean isAutoCleanTopicRouteNotFound() {
+        return autoCleanTopicRouteNotFound;
+    }
+
+    public void setAutoCleanTopicRouteNotFound(boolean autoCleanTopicRouteNotFound) {
+        this.autoCleanTopicRouteNotFound = autoCleanTopicRouteNotFound;
     }
 
     @Override
@@ -221,6 +295,7 @@ public class ClientConfig {
             + ", heartbeatBrokerInterval=" + heartbeatBrokerInterval + ", persistConsumerOffsetInterval="
             + persistConsumerOffsetInterval + ", unitMode=" + unitMode + ", unitName=" + unitName + ", vipChannelEnabled="
             + vipChannelEnabled + ", decodeReadBody=" + decodeReadBody + ", decodeDecompressBody=" + decodeDecompressBody
-            + ", useTLS=" + useTLS + "]";
+            + ", useTLS=" + useTLS + ", language=" + language.name() + ", namespace=" + namespace
+            + ", autoCleanNoRouteTopic=" + autoCleanTopicRouteNotFound + "]";
     }
 }

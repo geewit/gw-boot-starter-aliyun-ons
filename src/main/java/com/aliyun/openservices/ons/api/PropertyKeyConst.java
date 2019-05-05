@@ -1,5 +1,8 @@
 package com.aliyun.openservices.ons.api;
 
+import javax.annotation.Generated;
+
+@Generated("ons-api")
 public class PropertyKeyConst {
 
     /**
@@ -8,14 +11,21 @@ public class PropertyKeyConst {
     public static final String MessageModel = "MessageModel";
 
     /**
-     * Producer的标识
+     * Deprecated，请使用 GROUP_ID 替换
      */
+    @Deprecated
     public static final String ProducerId = "ProducerId";
 
     /**
-     * Consumer的标识
+     * Deprecated，请使用 GROUP_ID 替换
      */
+    @Deprecated
     public static final String ConsumerId = "ConsumerId";
+
+    /**
+     * Group ID，客户端ID
+     */
+    public static final String GROUP_ID = "GROUP_ID";
     /**
      * AccessKey, 用于标识、校验用户身份
      */
@@ -113,6 +123,11 @@ public class PropertyKeyConst {
     public static final String MaxCachedMessageSizeInMiB = "maxCachedMessageSizeInMiB";
 
     /**
+     * 设置实例名，注意：如果在一个进程中将多个Producer或者是多个Consumer设置相同的InstanceName，底层会共享连接。
+     */
+    public static final String InstanceName = "InstanceName";
+
+    /**
      * MQ消息轨迹开关
      */
     public static final String MsgTraceSwitch = "MsgTraceSwitch";
@@ -150,4 +165,26 @@ public class PropertyKeyConst {
      * Mqtt消息传输的数据可靠性级别
      */
     public static final String MqttQOS = "qoslevel";
+
+    /**
+     * 设置实例ID，充当命名空间的作用
+     */
+
+    public static final String INSTANCE_ID = "INSTANCE_ID";
+
+    /**
+     * 是否开启mqtransaction，用于使用exactly-once投递语义
+     */
+    public static final String EXACTLYONCE_DELIVERY = "exactlyOnceDelivery";
+
+    /**
+     * exactlyonceConsumer record manager 刷新过期记录周期
+     */
+    public static final String EXACTLYONCE_RM_REFRESHINTERVAL = "exactlyOnceRmRefreshInterval";
+
+    /**
+     * 每次获取最大消息数量
+     */
+    public static final String MAX_BATCH_MESSAGE_COUNT = "maxBatchMessageCount";
+
 }

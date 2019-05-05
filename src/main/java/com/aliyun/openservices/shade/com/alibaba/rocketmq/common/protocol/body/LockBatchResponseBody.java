@@ -24,7 +24,7 @@ import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.Remo
 
 public class LockBatchResponseBody extends RemotingSerializable {
 
-    private Set<MessageQueue> lockOKMQSet = new HashSet<>();
+    private Set<MessageQueue> lockOKMQSet = new HashSet<MessageQueue>();
 
     public Set<MessageQueue> getLockOKMQSet() {
         return lockOKMQSet;

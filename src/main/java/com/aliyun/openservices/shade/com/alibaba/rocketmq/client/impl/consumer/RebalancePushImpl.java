@@ -17,7 +17,6 @@
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.client.impl.consumer;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.consumer.AllocateMessageQueueStrategy;
@@ -192,8 +191,8 @@ public class RebalancePushImpl extends RebalanceImpl {
                         }
                     } else {
                         try {
-                            long timestamp = Objects.requireNonNull(UtilAll.parseDate(this.defaultMQPushConsumerImpl.getDefaultMQPushConsumer().getConsumeTimestamp(),
-                                    UtilAll.YYYYMMDDHHMMSS)).getTime();
+                            long timestamp = UtilAll.parseDate(this.defaultMQPushConsumerImpl.getDefaultMQPushConsumer().getConsumeTimestamp(),
+                                UtilAll.YYYYMMDDHHMMSS).getTime();
                             result = this.mQClientFactory.getMQAdminImpl().searchOffset(mq, timestamp);
                         } catch (MQClientException e) {
                             result = -1;

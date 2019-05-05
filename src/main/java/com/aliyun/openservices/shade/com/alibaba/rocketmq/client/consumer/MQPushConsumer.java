@@ -69,9 +69,11 @@ public interface MQPushConsumer extends MQConsumer {
      * This interface also has the ability of {@link #subscribe(String, String)},
      * and, support other message selection, such as {@link com.aliyun.openservices.shade.com.alibaba.rocketmq.common.filter.ExpressionType#SQL92}.
      * </p>
+     * <p/>
      * <p>
      * Choose Tag: {@link MessageSelector#byTag(java.lang.String)}
      * </p>
+     * <p/>
      * <p>
      * Choose SQL92: {@link MessageSelector#bySql(java.lang.String)}
      * </p>

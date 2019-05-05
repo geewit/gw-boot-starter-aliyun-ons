@@ -25,7 +25,7 @@ import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.Remo
 public class LockBatchRequestBody extends RemotingSerializable {
     private String consumerGroup;
     private String clientId;
-    private Set<MessageQueue> mqSet = new HashSet<>();
+    private Set<MessageQueue> mqSet = new HashSet<MessageQueue>();
 
     public String getConsumerGroup() {
         return consumerGroup;

@@ -16,7 +16,7 @@
  */
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.client.producer;
 
-import com.alibaba.fastjson.JSON;
+import com.aliyun.openservices.shade.com.alibaba.fastjson.JSON;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageQueue;
 
 public class SendResult {

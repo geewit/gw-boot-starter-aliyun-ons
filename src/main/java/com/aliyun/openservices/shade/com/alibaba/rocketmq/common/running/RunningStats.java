@@ -21,5 +21,5 @@ public enum RunningStats {
     commitLogMinOffset,
     commitLogDiskRatio,
     consumeQueueDiskRatio,
-    scheduleMessageOffset
+    scheduleMessageOffset,
 }

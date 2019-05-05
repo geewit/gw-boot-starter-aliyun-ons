@@ -21,7 +21,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.UtilAll;
-import org.slf4j.Logger;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
 
 public class MomentStatsItem {
 
@@ -30,10 +30,10 @@ public class MomentStatsItem {
     private final String statsName;
     private final String statsKey;
     private final ScheduledExecutorService scheduledExecutorService;
-    private final Logger log;
+    private final InternalLogger log;
 
     public MomentStatsItem(String statsName, String statsKey,
-        ScheduledExecutorService scheduledExecutorService, Logger log) {
+        ScheduledExecutorService scheduledExecutorService, InternalLogger log) {
         this.statsName = statsName;
         this.statsKey = statsKey;
         this.scheduledExecutorService = scheduledExecutorService;
@@ -41,12 +41,15 @@ public class MomentStatsItem {
     }
 
     public void init() {
-        this.scheduledExecutorService.scheduleAtFixedRate(() -> {
-            try {
-                printAtMinutes();
+        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    printAtMinutes();
 
-                MomentStatsItem.this.value.set(0);
-            } catch (Throwable ignored) {
+                    MomentStatsItem.this.value.set(0);
+                } catch (Throwable e) {
+                }
             }
         }, Math.abs(UtilAll.computNextMinutesTimeMillis() - System.currentTimeMillis()), 1000 * 60 * 5, TimeUnit.MILLISECONDS);
     }

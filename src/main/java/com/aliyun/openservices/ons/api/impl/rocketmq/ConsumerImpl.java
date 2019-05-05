@@ -1,10 +1,18 @@
 package com.aliyun.openservices.ons.api.impl.rocketmq;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+
+import javax.annotation.Generated;
+
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.consumer.listener.MessageListenerConcurrently;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageExt;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.heartbeat.MessageModel;
+
 import com.aliyun.openservices.ons.api.Action;
 import com.aliyun.openservices.ons.api.Constants;
 import com.aliyun.openservices.ons.api.ConsumeContext;
@@ -16,13 +24,9 @@ import com.aliyun.openservices.ons.api.PropertyKeyConst;
 import com.aliyun.openservices.ons.api.PropertyValueConst;
 import com.aliyun.openservices.ons.api.exception.ONSClientException;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-
+@Generated("ons-client")
 public class ConsumerImpl extends ONSConsumerAbstract implements Consumer {
-    private final ConcurrentHashMap<String/* Topic */, MessageListener> subscribeTable = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, MessageListener> subscribeTable = new ConcurrentHashMap<String, MessageListener>();
 
     public ConsumerImpl(final Properties properties) {
         super(properties);

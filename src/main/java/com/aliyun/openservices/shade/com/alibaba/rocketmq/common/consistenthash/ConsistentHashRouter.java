@@ -29,7 +29,7 @@ import java.util.TreeMap;
  * algorithm
  */
 public class ConsistentHashRouter<T extends Node> {
-    private final SortedMap<Long, VirtualNode<T>> ring = new TreeMap<>();
+    private final SortedMap<Long, VirtualNode<T>> ring = new TreeMap<Long, VirtualNode<T>>();
     private final HashFunction hashFunction;
 
     public ConsistentHashRouter(Collection<T> pNodes, int vNodeCount) {
@@ -60,12 +60,11 @@ public class ConsistentHashRouter<T extends Node> {
      * @param vNodeCount the number of virtual node of the physical node. Value should be greater than or equals to 0
      */
     public void addNode(T pNode, int vNodeCount) {
-        if (vNodeCount < 0) {
+        if (vNodeCount < 0)
             throw new IllegalArgumentException("illegal virtual node counts :" + vNodeCount);
-        }
         int existingReplicas = getExistingReplicas(pNode);
         for (int i = 0; i < vNodeCount; i++) {
-            VirtualNode<T> vNode = new VirtualNode<>(pNode, i + existingReplicas);
+            VirtualNode<T> vNode = new VirtualNode<T>(pNode, i + existingReplicas);
             ring.put(hashFunction.hash(vNode.getKey()), vNode);
         }
     }
@@ -100,20 +99,23 @@ public class ConsistentHashRouter<T extends Node> {
     }
 
     public int getExistingReplicas(T pNode) {
-        return (int) ring.values().stream().filter(vNode -> vNode.isVirtualNodeOf(pNode)).count();
+        int replicas = 0;
+        for (VirtualNode<T> vNode : ring.values()) {
+            if (vNode.isVirtualNodeOf(pNode)) {
+                replicas++;
+            }
+        }
+        return replicas;
     }
 
-
-    /**
-     * default hash function
-     */
+    //default hash function
     private static class MD5Hash implements HashFunction {
         MessageDigest instance;
 
-        MD5Hash() {
+        public MD5Hash() {
             try {
                 instance = MessageDigest.getInstance("MD5");
-            } catch (NoSuchAlgorithmException ignored) {
+            } catch (NoSuchAlgorithmException e) {
             }
         }
 

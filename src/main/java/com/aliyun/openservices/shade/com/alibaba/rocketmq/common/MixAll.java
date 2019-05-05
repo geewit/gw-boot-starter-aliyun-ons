@@ -41,11 +41,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.annotation.ImportantField;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.constant.LoggerName;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.help.FAQUrl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLoggerFactory;
 
 public class MixAll {
-    private static final Logger log = LoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
+    private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
 
     public static final String ROCKETMQ_HOME_ENV = "ROCKETMQ_HOME";
     public static final String ROCKETMQ_HOME_PROPERTY = "rocketmq.home.dir";
@@ -59,6 +59,8 @@ public class MixAll {
     //public static final String WS_ADDR = "http://" + WS_DOMAIN_NAME + ":8080/rocketmq/" + WS_DOMAIN_SUBGROUP;
     public static final String DEFAULT_TOPIC = "TBW102";
     public static final String BENCHMARK_TOPIC = "BenchmarkTest";
+
+
     public static final String DEFAULT_PRODUCER_GROUP = "DEFAULT_PRODUCER";
     public static final String DEFAULT_CONSUMER_GROUP = "DEFAULT_CONSUMER";
     public static final String TOOLS_CONSUMER_GROUP = "TOOLS_CONSUMER";
@@ -88,6 +90,7 @@ public class MixAll {
     public static final String UNIQUE_MSG_QUERY_FLAG = "_UNIQUE_KEY_QUERY";
     public static final String DEFAULT_TRACE_REGION_ID = "DefaultRegion";
     public static final String CONSUME_CONTEXT_TYPE = "ConsumeContextType";
+    public static final String CONSUME_EXACTLYONCE_STATUS = "ConsumeExactlyOnceStatus";
 
     /**
      *  This method accepts two methods to specify name server lookup domain: system environment variables and Java option.
@@ -102,7 +105,6 @@ public class MixAll {
         if (wsDomainName.indexOf(":") > 0) {
             wsAddr = "http://" + wsDomainName + "/rocketmq/" + wsDomainSubgroup;
         }
-        log.info("wsAddr : " + wsAddr);
         return wsAddr;
     }
 
@@ -174,6 +176,8 @@ public class MixAll {
         try {
             fileWriter = new FileWriter(file);
             fileWriter.write(str);
+        } catch (IOException e) {
+            throw e;
         } finally {
             if (fileWriter != null) {
                 fileWriter.close();
@@ -232,11 +236,11 @@ public class MixAll {
         return null;
     }
 
-    public static void printObjectProperties(final Logger logger, final Object object) {
+    public static void printObjectProperties(final InternalLogger logger, final Object object) {
         printObjectProperties(logger, object, false);
     }
 
-    public static void printObjectProperties(final Logger logger, final Object object,
+    public static void printObjectProperties(final InternalLogger logger, final Object object,
         final boolean onlyImportantField) {
         Field[] fields = object.getClass().getDeclaredFields();
         for (Field field : fields) {
@@ -262,7 +266,7 @@ public class MixAll {
                     }
 
                     if (logger != null) {
-                        logger.debug(name + "=" + value);
+                        logger.info(name + "=" + value);
                     } else {
                     }
                 }
@@ -387,9 +391,8 @@ public class MixAll {
         } catch (Throwable e) {
             try {
                 String candidatesHost = getLocalhostByNetworkInterface();
-                if (candidatesHost != null) {
+                if (candidatesHost != null)
                     return candidatesHost;
-                }
 
             } catch (Exception ignored) {
             }
@@ -398,13 +401,9 @@ public class MixAll {
         }
     }
 
-    /**
-     * Reverse logic comparing to RemotingUtil method, consider refactor in RocketMQ 5.0
-     * @return
-     * @throws SocketException
-     */
+    //Reverse logic comparing to RemotingUtil method, consider refactor in RocketMQ 5.0
     public static String getLocalhostByNetworkInterface() throws SocketException {
-        List<String> candidatesHost = new ArrayList<>();
+        List<String> candidatesHost = new ArrayList<String>();
         Enumeration<NetworkInterface> enumeration = NetworkInterface.getNetworkInterfaces();
 
         while (enumeration.hasMoreElements()) {
@@ -438,9 +437,8 @@ public class MixAll {
         long prev = target.get();
         while (value > prev) {
             boolean updated = target.compareAndSet(prev, value);
-            if (updated) {
+            if (updated)
                 return true;
-            }
 
             prev = target.get();
         }
@@ -450,9 +448,8 @@ public class MixAll {
 
     public static String humanReadableByteCount(long bytes, boolean si) {
         int unit = si ? 1000 : 1024;
-        if (bytes < unit) {
+        if (bytes < unit)
             return bytes + " B";
-        }
         int exp = (int) (Math.log(bytes) / Math.log(unit));
         String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
         return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);

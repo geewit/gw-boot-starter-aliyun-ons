@@ -1,23 +1,21 @@
 package com.alibaba.ons.open.trace.core.common;
 
-import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageType;
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.ArrayList;
 import java.util.List;
 
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageType;
+
 /**
- * Created by alvin on 16-3-10.
+ * @author MQDevelopers
  */
 public class OnsTraceDataEncoder {
+
     /**
      * 从轨迹数据字符串中解析出traceContext列表
-     *
      * @param traceData
-     * @return
      */
     public static List<OnsTraceContext> decoderFromTraceDataString(String traceData) {
-        List<OnsTraceContext> resList = new ArrayList<>();
+        List<OnsTraceContext> resList = new ArrayList<OnsTraceContext>();
         if (traceData == null || traceData.length() <= 0) {
             return resList;
         }
@@ -46,7 +44,7 @@ public class OnsTraceDataEncoder {
                     bean.setOffsetMsgId(line[12]);
                     pubContext.setSuccess(Boolean.parseBoolean(line[13]));
                 }
-                pubContext.setTraceBeans(new ArrayList<>(1));
+                pubContext.setTraceBeans(new ArrayList<OnsTraceBean>(1));
                 pubContext.getTraceBeans().add(bean);
                 resList.add(pubContext);
             } else if (line[0].equals(OnsTraceType.SubBefore.name())) {
@@ -60,7 +58,7 @@ public class OnsTraceDataEncoder {
                 bean.setMsgId(line[5]);
                 bean.setRetryTimes(Integer.parseInt(line[6]));
                 bean.setKeys(line[7]);
-                subBeforeContext.setTraceBeans(new ArrayList<>(1));
+                subBeforeContext.setTraceBeans(new ArrayList<OnsTraceBean>(1));
                 subBeforeContext.getTraceBeans().add(bean);
                 resList.add(subBeforeContext);
             } else if (line[0].equals(OnsTraceType.SubAfter.name())) {
@@ -70,13 +68,16 @@ public class OnsTraceDataEncoder {
                 OnsTraceBean bean = new OnsTraceBean();
                 bean.setMsgId(line[2]);
                 bean.setKeys(line[5]);
-                subAfterContext.setTraceBeans(new ArrayList<>(1));
+                subAfterContext.setTraceBeans(new ArrayList<OnsTraceBean>(1));
                 subAfterContext.getTraceBeans().add(bean);
                 subAfterContext.setCostTime(Integer.parseInt(line[3]));
                 subAfterContext.setSuccess(Boolean.parseBoolean(line[4]));
                 if (line.length >= 7) {
                     // add the context type
                     subAfterContext.setContextCode(Integer.parseInt(line[6]));
+                }
+                if (line.length >= 8) {
+                    subAfterContext.setExactlyOnceStatus(Integer.parseInt(line[7]));
                 }
                 resList.add(subAfterContext);
             }
@@ -137,7 +138,8 @@ public class OnsTraceDataEncoder {
                         .append(ctx.getCostTime()).append(OnsTraceConstants.CONTENT_SPLITOR)//
                         .append(ctx.isSuccess()).append(OnsTraceConstants.CONTENT_SPLITOR)//
                         .append(bean.getKeys()).append(OnsTraceConstants.CONTENT_SPLITOR)//
-                        .append(ctx.getContextCode()).append(OnsTraceConstants.FIELD_SPLITOR);
+                        .append(ctx.getContextCode()).append(OnsTraceConstants.CONTENT_SPLITOR)//
+                        .append(ctx.getExactlyOnceStatus()).append(OnsTraceConstants.FIELD_SPLITOR);
                 }
             }
             break;
@@ -146,7 +148,7 @@ public class OnsTraceDataEncoder {
         transferBean.setTransData(sb.toString());
         for (OnsTraceBean bean : ctx.getTraceBeans()) {
             transferBean.getTransKey().add(bean.getMsgId());
-            if (StringUtils.isNotEmpty(bean.getKeys())) {
+            if (bean.getKeys() != null && bean.getKeys().length() > 0) {
                 transferBean.getTransKey().add(bean.getKeys());
             }
         }

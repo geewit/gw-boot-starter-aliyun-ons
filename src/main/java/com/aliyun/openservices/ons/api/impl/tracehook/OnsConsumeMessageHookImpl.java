@@ -1,24 +1,22 @@
 package com.aliyun.openservices.ons.api.impl.tracehook;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.alibaba.ons.open.trace.core.common.OnsTraceBean;
 import com.alibaba.ons.open.trace.core.common.OnsTraceConstants;
 import com.alibaba.ons.open.trace.core.common.OnsTraceContext;
 import com.alibaba.ons.open.trace.core.common.OnsTraceType;
 import com.alibaba.ons.open.trace.core.dispatch.AsyncDispatcher;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.consumer.listener.ConsumeExactlyOnceStatus;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.consumer.listener.ConsumeReturnType;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.hook.ConsumeMessageContext;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.hook.ConsumeMessageHook;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.MixAll;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageConst;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageExt;
-import org.apache.commons.collections4.CollectionUtils;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.NamespaceUtil;
 
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Created by alvin on 16-3-8.
- */
 public class OnsConsumeMessageHookImpl implements ConsumeMessageHook {
     /**
      * 该Hook该由哪个dispatcher发送轨迹数据
@@ -41,9 +39,10 @@ public class OnsConsumeMessageHookImpl implements ConsumeMessageHook {
         }
         OnsTraceContext onsTraceContext = new OnsTraceContext();
         context.setMqTraceContext(onsTraceContext);
-        onsTraceContext.setTraceType(OnsTraceType.SubBefore);//
-        onsTraceContext.setGroupName(context.getConsumerGroup());//
-        List<OnsTraceBean> beans = new ArrayList<>();
+        onsTraceContext.setTraceType(OnsTraceType.SubBefore);
+        String userGroup = NamespaceUtil.withoutNamespace(context.getConsumerGroup(), context.getNamespace());
+        onsTraceContext.setGroupName(userGroup);
+        List<OnsTraceBean> beans = new ArrayList<OnsTraceBean>();
         for (MessageExt msg : context.getMsgList()) {
             if (msg == null) {
                 continue;
@@ -59,14 +58,16 @@ public class OnsConsumeMessageHookImpl implements ConsumeMessageHook {
                 continue;
             }
             OnsTraceBean traceBean = new OnsTraceBean();
-            traceBean.setTopic(msg.getTopic());//
-            traceBean.setMsgId(msg.getMsgId());//
-            traceBean.setTags(msg.getTags());//
-            traceBean.setKeys(msg.getKeys());//
-            traceBean.setStoreTime(msg.getStoreTimestamp());//
-            traceBean.setBodyLength(msg.getStoreSize());//
-            traceBean.setRetryTimes(msg.getReconsumeTimes());//
-            onsTraceContext.setRegionId(regionId);//
+
+            String userTopic = NamespaceUtil.withoutNamespace(msg.getTopic(), context.getNamespace());
+            traceBean.setTopic(userTopic);
+            traceBean.setMsgId(msg.getMsgId());
+            traceBean.setTags(msg.getTags());
+            traceBean.setKeys(msg.getKeys());
+            traceBean.setStoreTime(msg.getStoreTimestamp());
+            traceBean.setBodyLength(msg.getStoreSize());
+            traceBean.setRetryTimes(msg.getReconsumeTimes());
+            onsTraceContext.setRegionId(regionId);
             beans.add(traceBean);
         }
         if (beans.size() > 0) {
@@ -78,7 +79,7 @@ public class OnsConsumeMessageHookImpl implements ConsumeMessageHook {
 
     @Override
     public void consumeMessageAfter(ConsumeMessageContext context) {
-        if (context == null || CollectionUtils.isEmpty(context.getMsgList())) {
+        if (context == null || context.getMsgList() == null || context.getMsgList().isEmpty()) {
             return;
         }
         OnsTraceContext subBeforeContext = (OnsTraceContext) context.getMqTraceContext();
@@ -103,6 +104,10 @@ public class OnsConsumeMessageHookImpl implements ConsumeMessageHook {
         String contextType = context.getProps().get(MixAll.CONSUME_CONTEXT_TYPE);
         if (contextType != null) {
             subAfterContext.setContextCode(ConsumeReturnType.valueOf(contextType).ordinal());
+        }
+        String exactlyOnceStatus = context.getProps().get(MixAll.CONSUME_EXACTLYONCE_STATUS);
+        if (exactlyOnceStatus != null) {
+            subAfterContext.setExactlyOnceStatus(ConsumeExactlyOnceStatus.valueOf(exactlyOnceStatus).ordinal());
         }
         localDispatcher.append(subAfterContext);
     }

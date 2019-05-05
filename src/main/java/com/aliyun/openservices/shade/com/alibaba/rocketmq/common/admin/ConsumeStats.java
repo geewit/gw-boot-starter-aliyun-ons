@@ -17,6 +17,8 @@
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.common.admin;
 
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map.Entry;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageQueue;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.RemotingSerializable;
 
@@ -25,7 +27,16 @@ public class ConsumeStats extends RemotingSerializable {
     private double consumeTps = 0;
 
     public long computeTotalDiff() {
-        return this.offsetTable.entrySet().stream().mapToLong(next -> next.getValue().getBrokerOffset() - next.getValue().getConsumerOffset()).sum();
+        long diffTotal = 0L;
+
+        Iterator<Entry<MessageQueue, OffsetWrapper>> it = this.offsetTable.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<MessageQueue, OffsetWrapper> next = it.next();
+            long diff = next.getValue().getBrokerOffset() - next.getValue().getConsumerOffset();
+            diffTotal += diff;
+        }
+
+        return diffTotal;
     }
 
     public HashMap<MessageQueue, OffsetWrapper> getOffsetTable() {

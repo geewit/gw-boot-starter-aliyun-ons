@@ -27,6 +27,7 @@ public class EndTransactionResponseHeader implements CommandCustomHeader {
 
     @Override
     public void checkFields() throws RemotingCommandException {
+
     }
 
 }

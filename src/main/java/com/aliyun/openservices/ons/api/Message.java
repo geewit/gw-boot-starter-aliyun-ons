@@ -3,13 +3,10 @@ package com.aliyun.openservices.ons.api;
 import java.io.Serializable;
 import java.util.Properties;
 
-
 /**
  * 消息类. 一条消息由主题, 消息体以及可选的消息标签, 自定义附属键值对构成.
  *
- * <p>
- *     <strong>注意:</strong> 我们对每条消息的自定义键值对的长度没有限制, 但所有的自定义键值对, 系统键值对序列化后, 所占空间不能超过32767字节.
- * </p>
+ * <p> <strong>注意:</strong> 我们对每条消息的自定义键值对的长度没有限制, 但所有的自定义键值对, 系统键值对序列化后, 所占空间不能超过32767字节. </p>
  */
 public class Message implements Serializable {
 
@@ -21,13 +18,9 @@ public class Message implements Serializable {
     Properties systemProperties;
 
     /**
-     * <p>
-     *   消息主题, 最长不超过255个字符; 由a-z, A-Z, 0-9, 以及中划线"-"和下划线"_"构成.
-     * </p>
+     * <p> 消息主题, 最长不超过255个字符; 由a-z, A-Z, 0-9, 以及中划线"-"和下划线"_"构成. </p>
      *
-     * <p>
-     *   <strong>一条合法消息本成员变量不能为空</strong>
-     * </p>
+     * <p> <strong>一条合法消息本成员变量不能为空</strong> </p>
      */
     private String topic;
 
@@ -37,13 +30,9 @@ public class Message implements Serializable {
     private Properties userProperties;
 
     /**
-     * <p>
-     *    消息体, 消息体长度默认不超过4M, 具体请参阅集群部署文档描述.
-     * </p>
+     * <p> 消息体, 消息体长度默认不超过4M, 具体请参阅集群部署文档描述. </p>
      *
-     * <p>
-     *    <strong>一条合法消息本成员变量不能为空</strong>
-     * </p>
+     * <p> <strong>一条合法消息本成员变量不能为空</strong> </p>
      */
     private byte[] body;
 
@@ -56,6 +45,7 @@ public class Message implements Serializable {
 
     /**
      * 有参构造函数.
+     *
      * @param topic 消息主题, 最长不超过255个字符; 由a-z, A-Z, 0-9, 以及中划线"-"和下划线"_"构成.
      * @param tag 消息标签, 请使用合法标识符, 尽量简短且见名知意
      * @param key 业务主键
@@ -71,6 +61,7 @@ public class Message implements Serializable {
 
     /**
      * 添加系统属性K-V对.
+     *
      * @param key 属性Key
      * @param value 属性值
      */
@@ -86,6 +77,7 @@ public class Message implements Serializable {
 
     /**
      * 消息有参构造函数
+     *
      * @param topic 消息主题, 最长不超过255个字符; 由a-z, A-Z, 0-9, 以及中划线"-"和下划线"_"构成.
      * @param tags 消息标签, 合法标识符, 尽量简短且见名知意
      * @param body 消息体, 消息体长度默认不超过4M, 具体请参阅集群部署文档描述.
@@ -96,6 +88,7 @@ public class Message implements Serializable {
 
     /**
      * 添加用户自定义属性键值对; 该键值对在消费消费时可被获取.
+     *
      * @param key 自定义键
      * @param value 对应值
      */
@@ -111,6 +104,7 @@ public class Message implements Serializable {
 
     /**
      * 获取用户自定义键的值
+     *
      * @param key 自定义键
      * @return 用户自定义键值
      */
@@ -124,6 +118,7 @@ public class Message implements Serializable {
 
     /**
      * 获取消息的主题
+     *
      * @return 消息主题.
      */
     public String getTopic() {
@@ -132,6 +127,7 @@ public class Message implements Serializable {
 
     /**
      * 设置消息主题.
+     *
      * @param topic 消息主题
      */
     public void setTopic(String topic) {
@@ -140,6 +136,7 @@ public class Message implements Serializable {
 
     /**
      * 获取消息标签
+     *
      * @return 消息标签
      */
     public String getTag() {
@@ -148,6 +145,7 @@ public class Message implements Serializable {
 
     /**
      * 获取系统键的值
+     *
      * @param key 预定义的系统键
      * @return 指定系统键的值
      */
@@ -161,6 +159,7 @@ public class Message implements Serializable {
 
     /**
      * 设置消息标签
+     *
      * @param tag 标签.
      */
     public void setTag(String tag) {
@@ -169,6 +168,7 @@ public class Message implements Serializable {
 
     /**
      * 获取业务码
+     *
      * @return 业务码
      */
     public String getKey() {
@@ -177,6 +177,7 @@ public class Message implements Serializable {
 
     /**
      * 设置业务码
+     *
      * @param key 业务码
      */
     public void setKey(String key) {
@@ -185,6 +186,7 @@ public class Message implements Serializable {
 
     /**
      * 获取消息ID
+     *
      * @return 该消息ID
      */
     public String getMsgID() {
@@ -193,6 +195,7 @@ public class Message implements Serializable {
 
     /**
      * 设置该消息ID
+     *
      * @param msgid 该消息ID.
      */
     public void setMsgID(String msgid) {
@@ -225,6 +228,7 @@ public class Message implements Serializable {
 
     /**
      * 消息消费时, 获取消息已经被重试消费的次数
+     *
      * @return 重试消费次数.
      */
     public int getReconsumeTimes() {
@@ -238,6 +242,7 @@ public class Message implements Serializable {
 
     /**
      * 设置消息重试消费次数.
+     *
      * @param value 重试消费次数.
      */
     public void setReconsumeTimes(final int value) {
@@ -246,6 +251,7 @@ public class Message implements Serializable {
 
     /**
      * 获取消息的生产时间
+     *
      * @return 消息的生产时间.
      */
     public long getBornTimestamp() {

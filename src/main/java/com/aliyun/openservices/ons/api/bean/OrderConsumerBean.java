@@ -61,6 +61,13 @@ public class OrderConsumerBean implements OrderConsumer {
         this.orderConsumer.start();
     }
 
+    @Override
+    public void updateCredential(Properties credentialProperties) {
+        if (this.orderConsumer != null) {
+            this.orderConsumer.updateCredential(credentialProperties);
+        }
+    }
+
     /**
      * 关闭该{@code OrderConsumer}实例，建议配置为Bean的destroy-method
      */

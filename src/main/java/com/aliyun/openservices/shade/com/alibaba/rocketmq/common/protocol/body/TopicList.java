@@ -21,7 +21,7 @@ import java.util.Set;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.RemotingSerializable;
 
 public class TopicList extends RemotingSerializable {
-    private Set<String> topicList = new HashSet<>();
+    private Set<String> topicList = new HashSet<String>();
     private String brokerAddr;
 
     public Set<String> getTopicList() {

@@ -19,17 +19,21 @@ package com.aliyun.openservices.shade.com.alibaba.rocketmq.client.impl;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import com.aliyun.openservices.shade.io.netty.channel.EventLoopGroup;
+import com.aliyun.openservices.shade.io.netty.util.concurrent.EventExecutorGroup;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.ClientConfig;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.impl.factory.MQClientInstance;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.log.ClientLogger;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.RPCHook;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class MQClientManager {
-    private final static Logger log = LoggerFactory.getLogger("AliyunONS-client");
+    private final static InternalLogger log = ClientLogger.getLog();
     private static MQClientManager instance = new MQClientManager();
     private AtomicInteger factoryIndexGenerator = new AtomicInteger();
-    private ConcurrentMap<String/* clientId */, MQClientInstance> factoryTable = new ConcurrentHashMap<>();
+    private ConcurrentMap<String/* clientId */, MQClientInstance> factoryTable =
+        new ConcurrentHashMap<String, MQClientInstance>();
 
     private MQClientManager() {
 
@@ -44,12 +48,17 @@ public class MQClientManager {
     }
 
     public MQClientInstance getAndCreateMQClientInstance(final ClientConfig clientConfig, RPCHook rpcHook) {
+        return getAndCreateMQClientInstance(clientConfig, rpcHook, null, null);
+    }
+
+    public MQClientInstance getAndCreateMQClientInstance(final ClientConfig clientConfig, RPCHook rpcHook,
+        final EventLoopGroup eventLoopGroup, final EventExecutorGroup eventExecutorGroup) {
         String clientId = clientConfig.buildMQClientId();
         MQClientInstance instance = this.factoryTable.get(clientId);
         if (null == instance) {
             instance =
                 new MQClientInstance(clientConfig.cloneClientConfig(),
-                    this.factoryIndexGenerator.getAndIncrement(), clientId, rpcHook);
+                    this.factoryIndexGenerator.getAndIncrement(), clientId, rpcHook, eventLoopGroup, eventExecutorGroup);
             MQClientInstance prev = this.factoryTable.putIfAbsent(clientId, instance);
             if (prev != null) {
                 instance = prev;

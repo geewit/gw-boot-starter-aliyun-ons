@@ -17,20 +17,23 @@
 
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.common.stats;
 
+import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.UtilAll;
-import org.slf4j.Logger;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
 
 public class MomentStatsItemSet {
-    private final ConcurrentMap<String, MomentStatsItem> statsItemTable = new ConcurrentHashMap<>(128);
+    private final ConcurrentMap<String/* key */, MomentStatsItem> statsItemTable =
+        new ConcurrentHashMap<String, MomentStatsItem>(128);
     private final String statsName;
     private final ScheduledExecutorService scheduledExecutorService;
-    private final Logger log;
+    private final InternalLogger log;
 
-    public MomentStatsItemSet(String statsName, ScheduledExecutorService scheduledExecutorService, Logger log) {
+    public MomentStatsItemSet(String statsName, ScheduledExecutorService scheduledExecutorService, InternalLogger log) {
         this.statsName = statsName;
         this.scheduledExecutorService = scheduledExecutorService;
         this.log = log;
@@ -47,16 +50,23 @@ public class MomentStatsItemSet {
 
     public void init() {
 
-        this.scheduledExecutorService.scheduleAtFixedRate(() -> {
-            try {
-                printAtMinutes();
-            } catch (Throwable ignored) {
+        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    printAtMinutes();
+                } catch (Throwable ignored) {
+                }
             }
         }, Math.abs(UtilAll.computNextMinutesTimeMillis() - System.currentTimeMillis()), 1000 * 60 * 5, TimeUnit.MILLISECONDS);
     }
 
     private void printAtMinutes() {
-        this.statsItemTable.forEach((key, value) -> value.printAtMinutes());
+        Iterator<Entry<String, MomentStatsItem>> it = this.statsItemTable.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<String, MomentStatsItem> next = it.next();
+            next.getValue().printAtMinutes();
+        }
     }
 
     public void setValue(final String statsKey, final int value) {
@@ -67,8 +77,14 @@ public class MomentStatsItemSet {
     public MomentStatsItem getAndCreateStatsItem(final String statsKey) {
         MomentStatsItem statsItem = this.statsItemTable.get(statsKey);
         if (null == statsItem) {
-            statsItem = new MomentStatsItem(this.statsName, statsKey, this.scheduledExecutorService, this.log);
-            this.statsItemTable.put(statsKey, statsItem);
+            statsItem =
+                new MomentStatsItem(this.statsName, statsKey, this.scheduledExecutorService, this.log);
+            MomentStatsItem prev = this.statsItemTable.put(statsKey, statsItem);
+
+            if (null == prev) {
+
+                // statsItem.init();
+            }
         }
 
         return statsItem;

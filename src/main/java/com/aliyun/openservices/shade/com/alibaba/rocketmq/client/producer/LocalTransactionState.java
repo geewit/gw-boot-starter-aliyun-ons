@@ -19,5 +19,5 @@ package com.aliyun.openservices.shade.com.alibaba.rocketmq.client.producer;
 public enum LocalTransactionState {
     COMMIT_MESSAGE,
     ROLLBACK_MESSAGE,
-    UNKNOW
+    UNKNOW,
 }

@@ -17,8 +17,6 @@
 
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol;
 
-import java.util.Arrays;
-
 public enum SerializeType {
     JSON((byte) 0),
     ROCKETMQ((byte) 1);
@@ -30,7 +28,12 @@ public enum SerializeType {
     }
 
     public static SerializeType valueOf(byte code) {
-        return Arrays.stream(SerializeType.values()).filter(serializeType -> serializeType.getCode() == code).findFirst().orElse(null);
+        for (SerializeType serializeType : SerializeType.values()) {
+            if (serializeType.getCode() == code) {
+                return serializeType;
+            }
+        }
+        return null;
     }
 
     public byte getCode() {

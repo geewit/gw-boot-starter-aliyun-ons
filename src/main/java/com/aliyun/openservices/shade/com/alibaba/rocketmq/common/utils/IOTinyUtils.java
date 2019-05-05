@@ -49,7 +49,7 @@ public class IOTinyUtils {
     static public long copy(Reader input, Writer output) throws IOException {
         char[] buffer = new char[1 << 12];
         long count = 0;
-        for (int n; (n = input.read(buffer)) >= 0; ) {
+        for (int n = 0; (n = input.read(buffer)) >= 0; ) {
             output.write(buffer, 0, n);
             count += n;
         }
@@ -58,7 +58,7 @@ public class IOTinyUtils {
 
     static public List<String> readLines(Reader input) throws IOException {
         BufferedReader reader = toBufferedReader(input);
-        List<String> list = new ArrayList<>();
+        List<String> list = new ArrayList<String>();
         String line;
         for (; ; ) {
             line = reader.readLine();

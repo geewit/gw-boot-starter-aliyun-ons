@@ -1,12 +1,21 @@
 package com.aliyun.openservices.ons.api.impl.authority;
 
-import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.MixAll;
-import com.aliyun.openservices.ons.api.impl.rocketmq.ONSChannel;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Properties;
 
+import javax.annotation.Generated;
+
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.MixAll;
+
+import com.aliyun.openservices.ons.api.impl.rocketmq.ONSChannel;
+
+/**
+ * @author MQDevelopers
+ */
+
+@Generated("ons-auth4client")
 public class SessionCredentials {
     public static final Charset CHARSET = Charset.forName("UTF-8");
     public static final String AccessKey = "AccessKey";
@@ -174,11 +183,14 @@ public class SessionCredentials {
         }
 
         if (onsChannel == null) {
-            return other.onsChannel == null;
-        } else {
-            return onsChannel.equals(other.onsChannel);
+            if (other.onsChannel != null) {
+                return false;
+            }
+        } else if (!onsChannel.equals(other.onsChannel)) {
+            return false;
         }
 
+        return true;
     }
 
     @Override

@@ -17,7 +17,7 @@
 
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.netty;
 
-import io.netty.handler.ssl.SslContext;
+import com.aliyun.openservices.shade.io.netty.handler.ssl.SslContext;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.common.TlsMode;
 
 public class TlsSystemConfig {

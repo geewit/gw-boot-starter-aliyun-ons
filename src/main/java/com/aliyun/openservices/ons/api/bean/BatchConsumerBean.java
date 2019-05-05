@@ -60,6 +60,13 @@ public class BatchConsumerBean implements BatchConsumer {
         this.batchConsumer.start();
     }
 
+    @Override
+    public void updateCredential(Properties credentialProperties) {
+        if (this.batchConsumer != null) {
+            this.batchConsumer.updateCredential(credentialProperties);
+        }
+    }
+
     /**
      * 关闭该{@code BatchConsumer}实例，建议配置为Bean的destroy-method
      */

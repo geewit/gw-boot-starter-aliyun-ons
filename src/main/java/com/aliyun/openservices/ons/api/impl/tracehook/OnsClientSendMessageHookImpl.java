@@ -1,5 +1,7 @@
 package com.aliyun.openservices.ons.api.impl.tracehook;
 
+import java.util.ArrayList;
+
 import com.alibaba.ons.open.trace.core.common.OnsTraceBean;
 import com.alibaba.ons.open.trace.core.common.OnsTraceConstants;
 import com.alibaba.ons.open.trace.core.common.OnsTraceContext;
@@ -9,11 +11,8 @@ import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.hook.SendMessag
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.hook.SendMessageHook;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.producer.SendStatus;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.MixAll;
-import java.util.ArrayList;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.NamespaceUtil;
 
-/**
- * Created by alvin on 16-3-8.
- */
 public class OnsClientSendMessageHookImpl implements SendMessageHook {
     /**
      * 该Hook该由哪个dispatcher发送轨迹数据
@@ -36,12 +35,14 @@ public class OnsClientSendMessageHookImpl implements SendMessageHook {
             return;
         }
         OnsTraceContext onsContext = new OnsTraceContext();
-        onsContext.setTraceBeans(new ArrayList<>(1));
+        onsContext.setTraceBeans(new ArrayList<OnsTraceBean>(1));
         context.setMqTraceContext(onsContext);
         onsContext.setTraceType(OnsTraceType.Pub);
-        onsContext.setGroupName(context.getProducerGroup());
+        String userGroup = NamespaceUtil.withoutNamespace(context.getProducerGroup(), context.getNamespace());
+        onsContext.setGroupName(userGroup);
         OnsTraceBean traceBean = new OnsTraceBean();
-        traceBean.setTopic(context.getMessage().getTopic());
+        String userTopic = NamespaceUtil.withoutNamespace(context.getMessage().getTopic(), context.getNamespace());
+        traceBean.setTopic(userTopic);
         traceBean.setTags(context.getMessage().getTags());
         traceBean.setKeys(context.getMessage().getKeys());
         traceBean.setStoreHost(context.getBrokerAddr());

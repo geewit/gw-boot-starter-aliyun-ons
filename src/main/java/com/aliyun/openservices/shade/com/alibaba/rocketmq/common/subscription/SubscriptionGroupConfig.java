@@ -129,36 +129,35 @@ public class SubscriptionGroupConfig {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) {
+        if (this == obj)
             return true;
-        }
-        if (obj == null) {
+        if (obj == null)
             return false;
-        }
-        if (getClass() != obj.getClass()) {
+        if (getClass() != obj.getClass())
             return false;
-        }
         SubscriptionGroupConfig other = (SubscriptionGroupConfig) obj;
-        if (brokerId != other.brokerId) {
+        if (brokerId != other.brokerId)
             return false;
-        }
-        if (consumeBroadcastEnable != other.consumeBroadcastEnable) {
+        if (consumeBroadcastEnable != other.consumeBroadcastEnable)
             return false;
-        }
-        if (consumeEnable != other.consumeEnable) {
+        if (consumeEnable != other.consumeEnable)
             return false;
-        }
-        if (consumeFromMinEnable != other.consumeFromMinEnable) {
+        if (consumeFromMinEnable != other.consumeFromMinEnable)
             return false;
-        }
         if (groupName == null) {
-            if (other.groupName != null) {
+            if (other.groupName != null)
                 return false;
-            }
-        } else if (!groupName.equals(other.groupName)) {
+        } else if (!groupName.equals(other.groupName))
             return false;
-        }
-        return retryMaxTimes == other.retryMaxTimes && retryQueueNums == other.retryQueueNums && whichBrokerWhenConsumeSlowly == other.whichBrokerWhenConsumeSlowly && notifyConsumerIdsChangedEnable == other.notifyConsumerIdsChangedEnable;
+        if (retryMaxTimes != other.retryMaxTimes)
+            return false;
+        if (retryQueueNums != other.retryQueueNums)
+            return false;
+        if (whichBrokerWhenConsumeSlowly != other.whichBrokerWhenConsumeSlowly)
+            return false;
+        if (notifyConsumerIdsChangedEnable != other.notifyConsumerIdsChangedEnable)
+            return false;
+        return true;
     }
 
     @Override

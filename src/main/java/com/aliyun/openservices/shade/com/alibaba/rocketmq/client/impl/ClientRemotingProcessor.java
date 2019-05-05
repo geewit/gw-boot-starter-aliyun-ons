@@ -16,17 +16,21 @@
  */
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.client.impl;
 
-import io.netty.channel.ChannelHandlerContext;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.aliyun.openservices.shade.io.netty.channel.ChannelHandlerContext;
+import com.aliyun.openservices.shade.org.apache.commons.lang3.StringUtils;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.impl.factory.MQClientInstance;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.impl.producer.MQProducerInner;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.log.ClientLogger;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.UtilAll;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageConst;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageDecoder;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageExt;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageQueue;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.NamespaceUtil;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.RequestCode;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.ResponseCode;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.body.ConsumeMessageDirectlyResult;
@@ -39,15 +43,15 @@ import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.header
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.header.GetConsumerStatusRequestHeader;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.header.NotifyConsumerIdsChangedRequestHeader;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.header.ResetOffsetRequestHeader;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.common.RemotingHelper;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.exception.RemotingCommandException;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.netty.NettyRequestProcessor;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.RemotingCommand;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 
 public class ClientRemotingProcessor implements NettyRequestProcessor {
-    private final static Logger log = LoggerFactory.getLogger("AliyunONS-client");
+    private final InternalLogger log = ClientLogger.getLog();
     private final MQClientInstance mqClientFactory;
 
     public ClientRemotingProcessor(final MQClientInstance mqClientFactory) {
@@ -90,6 +94,10 @@ public class ClientRemotingProcessor implements NettyRequestProcessor {
         final ByteBuffer byteBuffer = ByteBuffer.wrap(request.getBody());
         final MessageExt messageExt = MessageDecoder.decode(byteBuffer);
         if (messageExt != null) {
+            if (StringUtils.isNotEmpty(this.mqClientFactory.getClientConfig().getNamespace())) {
+                messageExt.setTopic(NamespaceUtil
+                    .withoutNamespace(messageExt.getTopic(), this.mqClientFactory.getClientConfig().getNamespace()));
+            }
             final String group = messageExt.getProperty(MessageConst.PROPERTY_PRODUCER_GROUP);
             if (group != null) {
                 MQProducerInner producer = this.mqClientFactory.selectProducer(group);
@@ -109,7 +117,8 @@ public class ClientRemotingProcessor implements NettyRequestProcessor {
         return null;
     }
 
-    public RemotingCommand notifyConsumerIdsChanged(ChannelHandlerContext ctx, RemotingCommand request) {
+    public RemotingCommand notifyConsumerIdsChanged(ChannelHandlerContext ctx,
+        RemotingCommand request) throws RemotingCommandException {
         try {
             final NotifyConsumerIdsChangedRequestHeader requestHeader =
                 (NotifyConsumerIdsChangedRequestHeader) request.decodeCommandCustomHeader(NotifyConsumerIdsChangedRequestHeader.class);
@@ -130,7 +139,7 @@ public class ClientRemotingProcessor implements NettyRequestProcessor {
         log.info("invoke reset offset operation from broker. brokerAddr={}, topic={}, group={}, timestamp={}",
             RemotingHelper.parseChannelRemoteAddr(ctx.channel()), requestHeader.getTopic(), requestHeader.getGroup(),
             requestHeader.getTimestamp());
-        Map<MessageQueue, Long> offsetTable = new HashMap<>();
+        Map<MessageQueue, Long> offsetTable = new HashMap<MessageQueue, Long>();
         if (request.getBody() != null) {
             ResetOffsetBody body = ResetOffsetBody.decode(request.getBody(), ResetOffsetBody.class);
             offsetTable = body.getOffsetTable();

@@ -46,10 +46,10 @@ public class PullMessageSelector {
     /**
      * self define properties, just an extend point.
      */
-    private Map<String, String> properties = new HashMap<>(4);
+    private Map<String, String> properties = new HashMap<String, String>(4);
 
     public void putProperty(String key, String value) {
-        if (key == null || value == null || "".equals(key.trim()) || "".equals(value.trim())) {
+        if (key == null || value == null || key.trim() == "" || value.trim() == "") {
             throw new IllegalArgumentException(
                 "Key and Value can not be null or empty string!"
             );

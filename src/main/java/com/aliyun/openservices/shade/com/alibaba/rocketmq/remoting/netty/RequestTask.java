@@ -17,7 +17,7 @@
 
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.netty;
 
-import io.netty.channel.Channel;
+import com.aliyun.openservices.shade.io.netty.channel.Channel;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.RemotingCommand;
 
 public class RequestTask implements Runnable {
@@ -45,24 +45,19 @@ public class RequestTask implements Runnable {
 
     @Override
     public boolean equals(final Object o) {
-        if (this == o) {
+        if (this == o)
             return true;
-        }
-        if (!(o instanceof RequestTask)) {
+        if (!(o instanceof RequestTask))
             return false;
-        }
 
         final RequestTask that = (RequestTask) o;
 
-        if (getCreateTimestamp() != that.getCreateTimestamp()) {
+        if (getCreateTimestamp() != that.getCreateTimestamp())
             return false;
-        }
-        if (isStopRun() != that.isStopRun()) {
+        if (isStopRun() != that.isStopRun())
             return false;
-        }
-        if (channel != null ? !channel.equals(that.channel) : that.channel != null) {
+        if (channel != null ? !channel.equals(that.channel) : that.channel != null)
             return false;
-        }
         return request != null ? request.getOpaque() == that.request.getOpaque() : that.request == null;
 
     }

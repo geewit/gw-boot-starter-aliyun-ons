@@ -23,5 +23,5 @@ public enum CMResult {
     CR_ROLLBACK,
     CR_COMMIT,
     CR_THROW_EXCEPTION,
-    CR_RETURN_NULL
+    CR_RETURN_NULL,
 }

@@ -38,6 +38,7 @@ public class QueryMessageRequestHeader implements CommandCustomHeader {
 
     @Override
     public void checkFields() throws RemotingCommandException {
+
     }
 
     public String getTopic() {

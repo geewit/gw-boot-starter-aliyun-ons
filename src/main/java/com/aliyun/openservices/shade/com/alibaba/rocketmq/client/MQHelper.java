@@ -19,10 +19,10 @@ package com.aliyun.openservices.shade.com.alibaba.rocketmq.client;
 import java.util.Set;
 import java.util.TreeSet;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.consumer.DefaultMQPullConsumer;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.log.ClientLogger;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageQueue;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.heartbeat.MessageModel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class MQHelper {
     public static void resetOffsetByTimestamp(
@@ -48,7 +48,7 @@ public class MQHelper {
         final String consumerGroup,
         final String topic,
         final long timestamp) throws Exception {
-        final Logger log = LoggerFactory.getLogger("AliyunONS-client");
+        final InternalLogger log = ClientLogger.getLog();
 
         DefaultMQPullConsumer consumer = new DefaultMQPullConsumer(consumerGroup);
         consumer.setInstanceName(instanceName);
@@ -59,7 +59,7 @@ public class MQHelper {
         try {
             mqs = consumer.fetchSubscribeMessageQueues(topic);
             if (mqs != null && !mqs.isEmpty()) {
-                TreeSet<MessageQueue> mqsNew = new TreeSet<>(mqs);
+                TreeSet<MessageQueue> mqsNew = new TreeSet<MessageQueue>(mqs);
                 for (MessageQueue mq : mqsNew) {
                     long offset = consumer.searchOffset(mq, timestamp);
                     if (offset >= 0) {

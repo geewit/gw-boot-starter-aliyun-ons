@@ -17,8 +17,6 @@
 
 package com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.common;
 
-import java.util.Arrays;
-
 /**
  * For server, three SSL modes are supported: disabled, permissive and enforcing.
  * <ol>
@@ -40,8 +38,13 @@ public enum TlsMode {
     }
 
     public static TlsMode parse(String mode) {
-        return Arrays.stream(TlsMode.values()).filter(tlsMode -> tlsMode.name.equals(mode)).findFirst().orElse(PERMISSIVE);
+        for (TlsMode tlsMode : TlsMode.values()) {
+            if (tlsMode.name.equals(mode)) {
+                return tlsMode;
+            }
+        }
 
+        return PERMISSIVE;
     }
 
     public String getName() {

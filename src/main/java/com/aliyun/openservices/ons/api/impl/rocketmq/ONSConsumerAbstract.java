@@ -1,38 +1,45 @@
 package com.aliyun.openservices.ons.api.impl.rocketmq;
 
+import java.util.Properties;
+
 import com.alibaba.ons.open.trace.core.common.OnsTraceConstants;
 import com.alibaba.ons.open.trace.core.common.OnsTraceDispatcherType;
 import com.alibaba.ons.open.trace.core.dispatch.impl.AsyncArrayDispatcher;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.consumer.DefaultMQPushConsumer;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.exception.MQClientException;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.UtilAll;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
+
 import com.aliyun.openservices.ons.api.MessageSelector;
 import com.aliyun.openservices.ons.api.PropertyKeyConst;
 import com.aliyun.openservices.ons.api.exception.ONSClientException;
 import com.aliyun.openservices.ons.api.impl.tracehook.OnsConsumeMessageHookImpl;
-import java.util.Properties;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.aliyun.openservices.ons.api.impl.util.ClientLoggerUtil;
+import com.aliyun.openservices.shade.org.apache.commons.lang3.StringUtils;
 
 public class ONSConsumerAbstract extends ONSClientAbstract {
-    private final static Logger log = LoggerFactory.getLogger("AliyunONS-client");
-    final DefaultMQPushConsumer defaultMQPushConsumer;
+    final static InternalLogger LOGGER = ClientLoggerUtil.getClientLogger();
+    protected final DefaultMQPushConsumer defaultMQPushConsumer;
     private final static int MAX_CACHED_MESSAGE_SIZE_IN_MIB = 2048;
     private final static int MIN_CACHED_MESSAGE_SIZE_IN_MIB = 16;
     private final static int MAX_CACHED_MESSAGE_AMOUNT = 50000;
     private final static int MIN_CACHED_MESSAGE_AMOUNT = 100;
-    private int maxCachedMessageSizeInMiB = 512; //默认值限制为512MiB
-    private int maxCachedMessageAmount = 5000; //默认值限制为5000条
+    /** 默认值限制为512MiB */
+    private int maxCachedMessageSizeInMiB = 512;
+    /** 默认值限制为5000条 */
+    private int maxCachedMessageAmount = 5000;
 
     public ONSConsumerAbstract(final Properties properties) {
         super(properties);
 
-        this.defaultMQPushConsumer = new DefaultMQPushConsumer(new OnsClientRPCHook(sessionCredentials));
-
-        String consumerGroup = properties.getProperty(PropertyKeyConst.ConsumerId);
-        if (null == consumerGroup) {
+        String consumerGroup = properties.getProperty(PropertyKeyConst.GROUP_ID, properties.getProperty(PropertyKeyConst.ConsumerId));
+        if (StringUtils.isEmpty(consumerGroup)) {
             throw new ONSClientException("ConsumerId property is null");
         }
+
+        this.defaultMQPushConsumer =
+            new DefaultMQPushConsumer(this.getNamespace(), consumerGroup, new OnsClientRPCHook(sessionCredentials));
+
 
         String maxReconsumeTimes = properties.getProperty(PropertyKeyConst.MaxReconsumeTimes);
         if (!UtilAll.isBlank(maxReconsumeTimes)) {
@@ -40,6 +47,11 @@ public class ONSConsumerAbstract extends ONSClientAbstract {
                 this.defaultMQPushConsumer.setMaxReconsumeTimes(Integer.parseInt(maxReconsumeTimes));
             } catch (NumberFormatException ignored) {
             }
+        }
+
+        String maxBatchMessageCount = properties.getProperty(PropertyKeyConst.MAX_BATCH_MESSAGE_COUNT);
+        if (!UtilAll.isBlank(maxBatchMessageCount)) {
+            this.defaultMQPushConsumer.setPullBatchSize(Integer.valueOf(maxBatchMessageCount));
         }
 
         String consumeTimeout = properties.getProperty(PropertyKeyConst.ConsumeTimeout);
@@ -53,8 +65,8 @@ public class ONSConsumerAbstract extends ONSClientAbstract {
         boolean isVipChannelEnabled = Boolean.parseBoolean(properties.getProperty(PropertyKeyConst.isVipChannelEnabled, "false"));
         this.defaultMQPushConsumer.setVipChannelEnabled(isVipChannelEnabled);
 
-        this.defaultMQPushConsumer.setConsumerGroup(consumerGroup);
-        this.defaultMQPushConsumer.setInstanceName(this.buildIntanceName());
+        String instanceName = properties.getProperty(PropertyKeyConst.InstanceName, this.buildIntanceName());
+        this.defaultMQPushConsumer.setInstanceName(instanceName);
         this.defaultMQPushConsumer.setNamesrvAddr(this.getNameServerAddr());
 
         String consumeThreadNums = properties.getProperty(PropertyKeyConst.ConsumeThreadNums);
@@ -81,7 +93,7 @@ public class ONSConsumerAbstract extends ONSClientAbstract {
         // 为Consumer增加消息轨迹回发模块
         String msgTraceSwitch = properties.getProperty(PropertyKeyConst.MsgTraceSwitch);
         if (!UtilAll.isBlank(msgTraceSwitch) && (!Boolean.parseBoolean(msgTraceSwitch))) {
-            log.info("MQ Client Disable the Trace Hook!");
+            LOGGER.info("MQ Client Disable the Trace Hook!");
         } else {
             try {
                 Properties tempProperties = new Properties();
@@ -93,13 +105,13 @@ public class ONSConsumerAbstract extends ONSClientAbstract {
                 tempProperties.put(OnsTraceConstants.NAMESRV_ADDR, this.getNameServerAddr());
                 tempProperties.put(OnsTraceConstants.InstanceName, "PID_CLIENT_INNER_TRACE_PRODUCER");
                 tempProperties.put(OnsTraceConstants.TraceDispatcherType, OnsTraceDispatcherType.CONSUMER.name());
-                AsyncArrayDispatcher dispatcher = new AsyncArrayDispatcher(tempProperties);
+                AsyncArrayDispatcher dispatcher = new AsyncArrayDispatcher(tempProperties, sessionCredentials);
                 dispatcher.setHostConsumer(defaultMQPushConsumer.getDefaultMQPushConsumerImpl());
                 traceDispatcher = dispatcher;
                 this.defaultMQPushConsumer.getDefaultMQPushConsumerImpl().registerConsumeMessageHook(
                     new OnsConsumeMessageHookImpl(traceDispatcher));
             } catch (Throwable e) {
-                log.error("system mqtrace hook init failed ,maybe can't send msg trace data");
+                LOGGER.error("system mqtrace hook init failed ,maybe can't send msg trace data", e);
             }
         }
     }
@@ -109,7 +121,7 @@ public class ONSConsumerAbstract extends ONSClientAbstract {
         this.defaultMQPushConsumer.getDefaultMQPushConsumerImpl().getmQClientFactory().getMQClientAPIImpl().updateNameServerAddressList(newAddrs);
     }
 
-    void subscribe(String topic, String subExpression) {
+    protected void subscribe(String topic, String subExpression) {
         try {
             this.defaultMQPushConsumer.subscribe(topic, subExpression);
         } catch (MQClientException e) {
@@ -117,7 +129,7 @@ public class ONSConsumerAbstract extends ONSClientAbstract {
         }
     }
 
-    void subscribe(final String topic, final MessageSelector selector) {
+    protected void subscribe(final String topic, final MessageSelector selector) {
         String subExpression = "*";
         String type = com.aliyun.openservices.shade.com.alibaba.rocketmq.common.filter.ExpressionType.TAG;
         if (selector != null) {
@@ -144,7 +156,7 @@ public class ONSConsumerAbstract extends ONSClientAbstract {
         }
     }
 
-    void unsubscribe(String topic) {
+    protected void unsubscribe(String topic) {
         this.defaultMQPushConsumer.unsubscribe(topic);
     }
 

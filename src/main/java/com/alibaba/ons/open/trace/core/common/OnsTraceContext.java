@@ -1,11 +1,12 @@
 package com.alibaba.ons.open.trace.core.common;
 
-import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageClientIDSetter;
 import java.util.List;
+
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageClientIDSetter;
 
 
 /**
- * Created by alvin on 16-3-7.
+ * @author MQDevelopers
  */
 public class OnsTraceContext implements Comparable<OnsTraceContext> {
     /**
@@ -36,12 +37,15 @@ public class OnsTraceContext implements Comparable<OnsTraceContext> {
     /**
      * UUID,用于匹配消费前和消费后的数据
      */
- //   private String requestId = UUID.randomUUID().toString().replaceAll("-", "");
     private String requestId = MessageClientIDSetter.createUniqID();
     /**
      * context状态
      */
     private int contextCode = 0;
+    /**
+     * exactlyOnce状态
+     */
+    private int exactlyOnceStatus = 0;
     /**
      * 针对每条消息的轨迹数据
      */
@@ -53,6 +57,14 @@ public class OnsTraceContext implements Comparable<OnsTraceContext> {
 
     public void setContextCode(final int contextCode) {
         this.contextCode = contextCode;
+    }
+
+    public int getExactlyOnceStatus() {
+        return exactlyOnceStatus;
+    }
+
+    public void setExactlyOnceStatus(int exactlyOnceStatus) {
+        this.exactlyOnceStatus = exactlyOnceStatus;
     }
 
     public List<OnsTraceBean> getTraceBeans() {

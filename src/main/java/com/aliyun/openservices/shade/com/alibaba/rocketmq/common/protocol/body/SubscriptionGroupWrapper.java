@@ -25,7 +25,7 @@ import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.Remo
 
 public class SubscriptionGroupWrapper extends RemotingSerializable {
     private ConcurrentMap<String, SubscriptionGroupConfig> subscriptionGroupTable =
-        new ConcurrentHashMap<>(1024);
+        new ConcurrentHashMap<String, SubscriptionGroupConfig>(1024);
     private DataVersion dataVersion = new DataVersion();
 
     public ConcurrentMap<String, SubscriptionGroupConfig> getSubscriptionGroupTable() {

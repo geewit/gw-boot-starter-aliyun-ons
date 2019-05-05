@@ -27,12 +27,12 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.consumer.DefaultMQPushConsumer;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.log.ClientLogger;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageAccessor;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageConst;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageExt;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.protocol.body.ProcessQueueInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Queue consumption snapshot
@@ -42,16 +42,16 @@ public class ProcessQueue {
         Long.parseLong(System.getProperty("rocketmq.client.rebalance.lockMaxLiveTime", "30000"));
     public final static long REBALANCE_LOCK_INTERVAL = Long.parseLong(System.getProperty("rocketmq.client.rebalance.lockInterval", "20000"));
     private final static long PULL_MAX_IDLE_TIME = Long.parseLong(System.getProperty("rocketmq.client.pull.pullMaxIdleTime", "120000"));
-    private final static Logger log = LoggerFactory.getLogger("AliyunONS-client");
+    private final InternalLogger log = ClientLogger.getLog();
     private final ReadWriteLock lockTreeMap = new ReentrantReadWriteLock();
-    private final TreeMap<Long, MessageExt> msgTreeMap = new TreeMap<>();
+    private final TreeMap<Long, MessageExt> msgTreeMap = new TreeMap<Long, MessageExt>();
     private final AtomicLong msgCount = new AtomicLong();
     private final AtomicLong msgSize = new AtomicLong();
     private final Lock lockConsume = new ReentrantLock();
     /**
      * A subset of msgTreeMap, will only be used when orderly consume
      */
-    private final TreeMap<Long, MessageExt> consumingMsgOrderlyTreeMap = new TreeMap<>();
+    private final TreeMap<Long, MessageExt> consumingMsgOrderlyTreeMap = new TreeMap<Long, MessageExt>();
     private final AtomicLong tryUnlockTimes = new AtomicLong(0);
     private volatile long queueOffsetMax = 0L;
     private volatile boolean dropped = false;
@@ -87,6 +87,7 @@ public class ProcessQueue {
                     if (!msgTreeMap.isEmpty() && System.currentTimeMillis() - Long.parseLong(MessageAccessor.getConsumeStartTimeStamp(msgTreeMap.firstEntry().getValue())) > pushConsumer.getConsumeTimeout() * 60 * 1000) {
                         msg = msgTreeMap.firstEntry().getValue();
                     } else {
+
                         break;
                     }
                 } finally {
@@ -133,7 +134,7 @@ public class ProcessQueue {
                     if (null == old) {
                         validMsgCnt++;
                         this.queueOffsetMax = msg.getQueueOffset();
-                        msgSize.addAndGet(msg.getBody().length);
+                        msgSize.addAndGet(msg.getBody() != null ? msg.getBody().length : 0);
                     }
                 }
                 msgCount.addAndGet(validMsgCnt);
@@ -194,7 +195,7 @@ public class ProcessQueue {
                         MessageExt prev = msgTreeMap.remove(msg.getQueueOffset());
                         if (prev != null) {
                             removedCnt--;
-                            msgSize.addAndGet(0 - msg.getBody().length);
+                            msgSize.addAndGet(msg.getBody() != null ? 0 - msg.getBody().length : 0);
                         }
                     }
                     msgCount.addAndGet(removedCnt);
@@ -262,7 +263,7 @@ public class ProcessQueue {
                 Long offset = this.consumingMsgOrderlyTreeMap.lastKey();
                 msgCount.addAndGet(0 - this.consumingMsgOrderlyTreeMap.size());
                 for (MessageExt msg : this.consumingMsgOrderlyTreeMap.values()) {
-                    msgSize.addAndGet(0 - msg.getBody().length);
+                    msgSize.addAndGet(msg.getBody() != null ? 0 - msg.getBody().length : 0);
                 }
                 this.consumingMsgOrderlyTreeMap.clear();
                 if (offset != null) {
@@ -295,7 +296,7 @@ public class ProcessQueue {
     }
 
     public List<MessageExt> takeMessags(final int batchSize) {
-        List<MessageExt> result = new ArrayList<>(batchSize);
+        List<MessageExt> result = new ArrayList<MessageExt>(batchSize);
         final long now = System.currentTimeMillis();
         try {
             this.lockTreeMap.writeLock().lockInterruptibly();
@@ -334,7 +335,7 @@ public class ProcessQueue {
             } finally {
                 this.lockTreeMap.readLock().unlock();
             }
-        } catch (InterruptedException ignored) {
+        } catch (InterruptedException e) {
         }
 
         return true;
@@ -417,7 +418,7 @@ public class ProcessQueue {
             info.setDroped(this.dropped);
             info.setLastPullTimestamp(this.lastPullTimestamp);
             info.setLastConsumeTimestamp(this.lastConsumeTimestamp);
-        } catch (Exception ignored) {
+        } catch (Exception e) {
         } finally {
             this.lockTreeMap.readLock().unlock();
         }

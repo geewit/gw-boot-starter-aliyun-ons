@@ -24,7 +24,8 @@ import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.Message
  * Message lock,strictly ensure the single queue only one thread at a time consuming
  */
 public class MessageQueueLock {
-    private ConcurrentMap<MessageQueue, Object> mqLockTable = new ConcurrentHashMap<>();
+    private ConcurrentMap<MessageQueue, Object> mqLockTable =
+        new ConcurrentHashMap<MessageQueue, Object>();
 
     public Object fetchLockObject(final MessageQueue mq) {
         Object objLock = this.mqLockTable.get(mq);

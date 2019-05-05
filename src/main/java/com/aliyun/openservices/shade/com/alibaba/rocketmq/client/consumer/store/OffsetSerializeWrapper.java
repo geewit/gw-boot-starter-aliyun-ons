@@ -26,7 +26,8 @@ import com.aliyun.openservices.shade.com.alibaba.rocketmq.remoting.protocol.Remo
  * Wrapper class for offset serialization
  */
 public class OffsetSerializeWrapper extends RemotingSerializable {
-    private ConcurrentMap<MessageQueue, AtomicLong> offsetTable = new ConcurrentHashMap<>();
+    private ConcurrentMap<MessageQueue, AtomicLong> offsetTable =
+        new ConcurrentHashMap<MessageQueue, AtomicLong>();
 
     public ConcurrentMap<MessageQueue, AtomicLong> getOffsetTable() {
         return offsetTable;

@@ -1,30 +1,40 @@
 package com.aliyun.openservices.ons.api.impl.rocketmq;
 
+import java.util.List;
+import java.util.Properties;
+
 import com.alibaba.ons.open.trace.core.common.OnsTraceConstants;
 import com.alibaba.ons.open.trace.core.common.OnsTraceDispatcherType;
 import com.alibaba.ons.open.trace.core.dispatch.impl.AsyncArrayDispatcher;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.client.producer.DefaultMQProducer;
 import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.UtilAll;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.MessageQueue;
+import com.aliyun.openservices.shade.com.alibaba.rocketmq.logging.InternalLogger;
+
 import com.aliyun.openservices.ons.api.Message;
 import com.aliyun.openservices.ons.api.PropertyKeyConst;
 import com.aliyun.openservices.ons.api.SendResult;
 import com.aliyun.openservices.ons.api.exception.ONSClientException;
 import com.aliyun.openservices.ons.api.impl.tracehook.OnsClientSendMessageHookImpl;
+import com.aliyun.openservices.ons.api.impl.util.ClientLoggerUtil;
 import com.aliyun.openservices.ons.api.order.OrderProducer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Properties;
+import com.aliyun.openservices.shade.org.apache.commons.lang3.StringUtils;
 
 public class OrderProducerImpl extends ONSClientAbstract implements OrderProducer {
-    private final static Logger log = LoggerFactory.getLogger("AliyunONS-client");
+    private final static InternalLogger LOGGER = ClientLoggerUtil.getClientLogger();
     private final DefaultMQProducer defaultMQProducer;
 
     public OrderProducerImpl(final Properties properties) {
         super(properties);
-        this.defaultMQProducer = new DefaultMQProducer(new OnsClientRPCHook(sessionCredentials));
+        String producerGroup = properties.getProperty(PropertyKeyConst.GROUP_ID, properties.getProperty(PropertyKeyConst.ProducerId));
+        if (StringUtils.isEmpty(producerGroup)) {
+            producerGroup = "__ONS_PRODUCER_DEFAULT_GROUP";
+        }
 
-        String producerGroup = properties.getProperty(PropertyKeyConst.ProducerId, "__ONS_PRODUCER_DEFAULT_GROUP");
+        this.defaultMQProducer =
+            new DefaultMQProducer(this.getNamespace(), producerGroup, new OnsClientRPCHook(sessionCredentials));
+
+
         this.defaultMQProducer.setProducerGroup(producerGroup);
 
         boolean isVipChannelEnabled = Boolean.parseBoolean(properties.getProperty(PropertyKeyConst.isVipChannelEnabled, "false"));
@@ -33,12 +43,16 @@ public class OrderProducerImpl extends ONSClientAbstract implements OrderProduce
         String sendMsgTimeoutMillis = properties.getProperty(PropertyKeyConst.SendMsgTimeoutMillis, "3000");
         this.defaultMQProducer.setSendMsgTimeout(Integer.parseInt(sendMsgTimeoutMillis));
 
-        this.defaultMQProducer.setInstanceName(this.buildIntanceName());
+        boolean addExtendUniqInfo = Boolean.parseBoolean(properties.getProperty(PropertyKeyConst.EXACTLYONCE_DELIVERY, "false"));
+        this.defaultMQProducer.setAddExtendUniqInfo(addExtendUniqInfo);
+
+        String instanceName = properties.getProperty(PropertyKeyConst.InstanceName, this.buildIntanceName());
+        this.defaultMQProducer.setInstanceName(instanceName);
         this.defaultMQProducer.setNamesrvAddr(this.getNameServerAddr());
         // 为Producer增加消息轨迹回发模块
         String msgTraceSwitch = properties.getProperty(PropertyKeyConst.MsgTraceSwitch);
         if (!UtilAll.isBlank(msgTraceSwitch) && (!Boolean.parseBoolean(msgTraceSwitch))) {
-            log.info("MQ Client Disable the Trace Hook!");
+            LOGGER.info("MQ Client Disable the Trace Hook!");
         } else {
             try {
                 Properties tempProperties = new Properties();
@@ -50,13 +64,13 @@ public class OrderProducerImpl extends ONSClientAbstract implements OrderProduce
                 tempProperties.put(OnsTraceConstants.NAMESRV_ADDR, this.getNameServerAddr());
                 tempProperties.put(OnsTraceConstants.InstanceName, "PID_CLIENT_INNER_TRACE_PRODUCER");
                 tempProperties.put(OnsTraceConstants.TraceDispatcherType, OnsTraceDispatcherType.PRODUCER.name());
-                AsyncArrayDispatcher dispatcher = new AsyncArrayDispatcher(tempProperties);
+                AsyncArrayDispatcher dispatcher = new AsyncArrayDispatcher(tempProperties, sessionCredentials);
                 dispatcher.setHostProducer(defaultMQProducer.getDefaultMQProducerImpl());
                 traceDispatcher = dispatcher;
                 this.defaultMQProducer.getDefaultMQProducerImpl().registerSendMessageHook(
                     new OnsClientSendMessageHookImpl(traceDispatcher));
             } catch (Throwable e) {
-                log.error("system mqtrace hook init failed ,maybe can't send msg trace data");
+                LOGGER.error("system mqtrace hook init failed ,maybe can't send msg trace data", e);
             }
         }
     }
@@ -96,12 +110,16 @@ public class OrderProducerImpl extends ONSClientAbstract implements OrderProduce
         final com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.Message msgRMQ = ONSUtil.msgConvert(message);
         try {
             com.aliyun.openservices.shade.com.alibaba.rocketmq.client.producer.SendResult sendResultRMQ =
-                this.defaultMQProducer.send(msgRMQ, (mqs, msg, shardingKey1) -> {
-                    int select = Math.abs(shardingKey1.hashCode());
-                    if (select < 0) {
-                        select = 0;
+                this.defaultMQProducer.send(msgRMQ, new com.aliyun.openservices.shade.com.alibaba.rocketmq.client.producer.MessageQueueSelector() {
+                    @Override
+                    public MessageQueue select(List<MessageQueue> mqs, com.aliyun.openservices.shade.com.alibaba.rocketmq.common.message.Message msg,
+                        Object shardingKey) {
+                        int select = Math.abs(shardingKey.hashCode());
+                        if (select < 0) {
+                            select = 0;
+                        }
+                        return mqs.get(select % mqs.size());
                     }
-                    return mqs.get(select % mqs.size());
                 }, shardingKey);
             message.setMsgID(sendResultRMQ.getMsgId());
             SendResult sendResult = new SendResult();
