@@ -3,21 +3,30 @@ apply from: "https://raw.githubusercontent.com/geewit/gradle_publish_sonatype/ma
 
 
 dependencies {
-    compile("org.slf4j:slf4j-api:$slf4j_version") {
+    compileOnly("org.slf4j:slf4j-api:$slf4j_version") {
         exclude group: 'org.slf4j', module: 'logback'
     }
-    compile("io.netty:netty-all:$netty_version")
+    compileOnly("com.google.guava:guava:$guava_version")
+//    compileOnly("org.eclipse.jetty:jetty-server:$jetty_version")
+//    compileOnly("com.google.protobuf:protobuf-java:$protobuf_version")
+//    compileOnly("javassist:javassist:$javassist_version")
+//    compile("io.netty:netty-all:$netty_version")
+//    compileOnly("io.netty:netty-tcnative:$netty_tcnative_version")
     compile("commons-codec:commons-codec:$commons_codec_version")
     compile("org.apache.commons:commons-collections4:$commons_collections4_version")
     compile("org.apache.commons:commons-lang3:$commons_lang3_version")
 
-    compile("com.alibaba:fastjson:$fastjson_version")
+//    compileOnly("com.alibaba:fastjson:$fastjson_version")
     //compile("io.geewit.core:gw-core-utils:$gw_core_utils_version")
     compile("io.geewit.boot:gw-boot-starter-aliyun:$gw_boot_starter_aliyun_version")
-//    compile("com.aliyun.openservices:ons-client:$aliyun_java_sdk_ons_version")
-    compile("org.springframework.boot:spring-boot-actuator:$spring_boot_version")
-    compile("org.springframework.boot:spring-boot-autoconfigure:$spring_boot_version")
-    compile("org.springframework.boot:spring-boot-configuration-processor:$spring_boot_version")
-    compile("org.springframework.boot:spring-boot-starter-web:$spring_boot_version")
+    compile("com.aliyun.openservices:ons-client:$aliyun_java_sdk_ons_version")
+    compileOnly("org.springframework.boot:spring-boot-actuator:$spring_boot_version")
+    compileOnly("org.springframework.boot:spring-boot-autoconfigure:$spring_boot_version")
+    compileOnly("org.springframework.boot:spring-boot-configuration-processor:$spring_boot_version")
+    compileOnly("org.springframework.boot:spring-boot-starter-web:$spring_boot_version") {
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
+    }
+//    compileOnly("org.jboss.marshalling:jboss-marshalling:$jboss_marshalling_version")
+//    compileOnly("com.barchart.udt:barchart-udt-core:$barchart_udt_version")
 }
 
