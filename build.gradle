@@ -13,7 +13,5 @@ dependencies {
     compileOnly("org.springframework.boot:spring-boot-starter-web:$spring_boot_version") {
         exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
     }
-//    compileOnly("org.jboss.marshalling:jboss-marshalling:$jboss_marshalling_version")
-//    compileOnly("com.barchart.udt:barchart-udt-core:$barchart_udt_version")
 }
 
